@@ -256,6 +256,31 @@
                     </span>
                 </div>
             </div>
+
+            <!-- Tombol Beralih / Konfigurasi Ulang Database MySQL -->
+            <div class="mt-5 pt-4 border-t border-slate-100">
+                @if($dbDriver === 'sqlite')
+                    <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 mb-3">
+                        <div class="flex items-start gap-2.5">
+                            <span class="text-amber-600 text-base">ℹ️</span>
+                            <div class="text-xs text-amber-900 leading-relaxed">
+                                <span class="font-bold">Aplikasi saat ini berjalan menggunakan database internal SQLite.</span><br>
+                                Data tersimpan di file lokal <code class="font-mono bg-amber-100 px-1 py-0.5 rounded text-[11px]">database/database.sqlite</code> (karena itu Anda bisa langsung login tanpa setup). Jika Anda ingin beralih ke database <strong>MySQL Hostinger</strong> Anda, klik tombol di bawah untuk membuka Wizard Pengaturan Database.
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
+                <form method="POST" action="{{ route('admin.system.reset-installer') }}" onsubmit="return confirm('Apakah Anda ingin membuka wizard instalasi untuk mengonfigurasi database MySQL? Sesi login akan keluar dan Anda akan diarahkan ke panduan instalasi database.')">
+                    @csrf
+                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl {{ $dbDriver === 'sqlite' ? 'bg-amber-600 hover:bg-amber-700 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700' }} font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7c0-2-1-3-3-3H7c-2 0-3 1-3 3z"/>
+                        </svg>
+                        <span>{{ $dbDriver === 'sqlite' ? 'Beralih ke Database MySQL Hostinger (Wizard)' : 'Konfigurasi Ulang Database MySQL' }}</span>
+                    </button>
+                </form>
+            </div>
         </div>
 
     </div>

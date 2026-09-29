@@ -53,11 +53,17 @@
             </div>
         </div>
 
-        <!-- Flash Messages -->
         @if(session('success'))
             <div class="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium flex items-center gap-2">
                 <span>✓</span>
                 <span>{{ session('success') }}</span>
+            </div>
+        @endif
+
+        @if(session('info'))
+            <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-800 text-xs font-medium flex items-center gap-2">
+                <span>ℹ️</span>
+                <span>{{ session('info') }}</span>
             </div>
         @endif
 

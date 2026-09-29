@@ -222,4 +222,28 @@ class SystemMaintenanceController extends Controller
 
         file_put_contents($envPath, $content);
     }
+
+    /**
+     * Unlock installer to allow switching database connection (e.g. SQLite to MySQL).
+     */
+    public function resetInstaller(Request $request): RedirectResponse
+    {
+        $lockFile = storage_path('installed');
+        if (file_exists($lockFile)) {
+            @unlink($lockFile);
+        }
+
+        try {
+            Artisan::call('config:clear');
+            Artisan::call('cache:clear');
+        } catch (\Exception $e) {
+            // Ignore if restricted
+        }
+
+        auth()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect()->route('install.index')->with('info', 'Kunci instalasi telah dibuka. Silakan masukkan data database MySQL Anda.');
+    }
 }

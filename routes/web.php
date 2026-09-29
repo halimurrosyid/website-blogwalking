@@ -118,4 +118,5 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/system/fix-storage-link', [SystemMaintenanceController::class, 'fixStorageLink'])->name('system.fix-storage-link');
     Route::get('/system/backup', [SystemMaintenanceController::class, 'backupDatabase'])->name('system.backup');
     Route::post('/system/update-domain', [SystemMaintenanceController::class, 'updateAppUrl'])->name('system.update-domain');
+    Route::post('/system/reset-installer', [SystemMaintenanceController::class, 'resetInstaller'])->name('system.reset-installer');
 });
