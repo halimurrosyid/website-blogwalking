@@ -54,7 +54,8 @@
             </div>
         </form>
 
-        <!-- Quick Demo Accounts (Sangat membantu untuk tes langsung) -->
+        <!-- Quick Demo Accounts (Hanya tampil saat lokal / belum instalasi) -->
+        @if(app()->isLocal() || ! file_exists(storage_path('installed')))
         <div class="mt-8 pt-6 border-t border-slate-100 text-center">
             <p class="text-xs font-semibold uppercase tracking-wider text-slate-400 mb-3">Akun Uji Coba Cepat (Klik untuk Isi):</p>
             <div class="grid grid-cols-2 gap-3">
@@ -71,6 +72,7 @@
             </div>
             <p class="text-[11px] text-slate-400 mt-3">Password default: <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600 font-mono">password123</code></p>
         </div>
+        @endif
     </div>
 </div>
 @endsection
