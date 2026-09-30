@@ -282,6 +282,7 @@
                                         <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->pr ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-400' }}" title="PageRank / Score">
                                             PR {{ $domain->pr ?? '-' }}
                                         </span>
+                                    @endif
                                     @if($showDa || $showPa || $showPr)
                                         <button type="button" 
                                             @click="openEditMetrics('{{ $domain->root_domain }}', '{{ route('admin.domains.metrics', $domain) }}', '{{ $domain->da }}', '{{ $domain->pa }}', '{{ $domain->dr }}', '{{ $domain->pr }}')"
