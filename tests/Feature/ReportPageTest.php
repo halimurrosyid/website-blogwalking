@@ -6,6 +6,7 @@ use App\Models\Assignment;
 use App\Models\Period;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class ReportPageTest extends TestCase
@@ -149,5 +150,16 @@ class ReportPageTest extends TestCase
 
         $response = $this->actingAs($worker)->get(route('blogwalker.submissions.create'));
         $response->assertStatus(200);
+    }
+
+    public function test_storage_fallback_serves_public_file(): void
+    {
+        Storage::disk('public')->put('tests/demo.txt', 'test content');
+
+        $response = $this->get('/storage/tests/demo.txt');
+        $response->assertStatus(200);
+        $this->assertTrue(str_contains($response->headers->get('Content-Type') ?? '', 'text/plain'));
+
+        Storage::disk('public')->delete('tests/demo.txt');
     }
 }

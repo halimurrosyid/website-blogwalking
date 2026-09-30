@@ -67,6 +67,14 @@ class EnsureInstalled
                 Artisan::call('migrate', ['--force' => true]);
             }
 
+            if (! file_exists(public_path('storage'))) {
+                try {
+                    Artisan::call('storage:link');
+                } catch (\Throwable $linkEx) {
+                    // Handled gracefully by storage.fallback route
+                }
+            }
+
             @file_put_contents($markerFile, now()->toIso8601String());
         } catch (\Throwable $e) {
             Log::warning('Automatic database migration failed or skipped: '.$e->getMessage());

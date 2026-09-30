@@ -124,3 +124,20 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/system/update-rates', [SystemMaintenanceController::class, 'updateRates'])->name('system.update-rates');
     Route::post('/system/reset-installer', [SystemMaintenanceController::class, 'resetInstaller'])->name('system.reset-installer');
 });
+
+// Fallback route for public storage files (Ensures uploaded screenshots & media always load on shared hosting / Hostinger even if symlink is absent)
+Route::get('/storage/{path}', function (string $path) {
+    $cleanPath = str_replace(['../', '..\\'], '', $path);
+    $fullPath = storage_path('app/public/'.$cleanPath);
+
+    if (! file_exists($fullPath) || is_dir($fullPath)) {
+        abort(404);
+    }
+
+    $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
+
+    return response()->file($fullPath, [
+        'Content-Type' => $mime,
+        'Cache-Control' => 'public, max-age=31536000',
+    ]);
+})->where('path', '.*')->name('storage.fallback');
