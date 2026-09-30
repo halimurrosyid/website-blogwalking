@@ -126,13 +126,17 @@
                     <tr class="hover:bg-slate-50/60 transition">
                         <!-- Screenshot Preview -->
                         <td class="px-6 py-4">
-                            <div class="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 cursor-pointer hover:opacity-80 transition group relative"
+                            <div class="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 cursor-pointer hover:opacity-80 transition group relative shadow-2xs"
                                 @click="lightboxImg = '{{ $sub->screenshot_url }}'; lightboxOpen = true">
-                                <img src="{{ $sub->screenshot_url }}" alt="SS" class="w-full h-full object-cover">
-                                <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white text-[10px]">
+                                <img src="{{ $sub->screenshot_url }}" alt="SS" class="w-full h-full object-cover"
+                                    onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'64\' height=\'48\' fill=\'%2394a3b8\' viewBox=\'0 0 24 24\'><rect width=\'24\' height=\'24\' fill=\'%23f1f5f9\'/><path d=\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z\'/></svg>'">
+                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white text-[10px] font-bold">
                                     🔍 Zoom
                                 </div>
                             </div>
+                            <a href="{{ $sub->screenshot_url }}" target="_blank" rel="noopener noreferrer" class="text-[10px] text-emerald-600 hover:text-emerald-800 hover:underline block text-center mt-1 font-semibold">
+                                Buka Foto ↗
+                            </a>
                         </td>
 
                         <!-- Domain & URL -->
@@ -225,12 +229,17 @@
     </div>
 
     <!-- Lightbox Modal for Screenshot Preview -->
-    <div x-show="lightboxOpen" x-cloak class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" @click="lightboxOpen = false">
-        <div class="relative max-w-5xl max-h-[90vh] bg-slate-900 rounded-xl overflow-hidden p-2" @click.stop>
-            <button @click="lightboxOpen = false" class="absolute top-4 right-4 text-white hover:text-rose-400 bg-black/60 rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg z-10 cursor-pointer">
-                &times;
-            </button>
-            <img :src="lightboxImg" alt="Screenshot Zoom" class="max-h-[85vh] w-auto mx-auto object-contain rounded-lg">
+    <div x-show="lightboxOpen" x-cloak class="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-2xs" @click="lightboxOpen = false">
+        <div class="relative max-w-5xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden p-2 shadow-2xl border border-slate-700" @click.stop>
+            <div class="absolute top-4 right-4 z-10 flex items-center gap-2">
+                <a :href="lightboxImg" target="_blank" rel="noopener noreferrer" class="px-3 py-1 rounded-full bg-black/60 hover:bg-black/90 text-white text-xs font-semibold transition flex items-center gap-1">
+                    Buka Ukuran Asli ↗
+                </a>
+                <button @click="lightboxOpen = false" class="text-white hover:text-rose-400 bg-black/60 hover:bg-black/90 rounded-full w-8 h-8 flex items-center justify-center font-bold text-lg cursor-pointer transition">
+                    &times;
+                </button>
+            </div>
+            <img :src="lightboxImg" alt="Screenshot Zoom" class="max-h-[85vh] w-auto mx-auto object-contain rounded-xl">
         </div>
     </div>
 

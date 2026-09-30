@@ -125,19 +125,37 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/system/reset-installer', [SystemMaintenanceController::class, 'resetInstaller'])->name('system.reset-installer');
 });
 
-// Fallback route for public storage files (Ensures uploaded screenshots & media always load on shared hosting / Hostinger even if symlink is absent)
-Route::get('/storage/{path}', function (string $path) {
-    $cleanPath = str_replace(['../', '..\\'], '', $path);
-    $fullPath = storage_path('app/public/'.$cleanPath);
+// File delivery for screenshots and documents (Works reliably across all hosting environments without symlink dependency)
+$serveStorageFile = function (string $path) {
+    $cleanPath = urldecode(str_replace(['../', '..\\'], '', $path));
 
-    if (! file_exists($fullPath) || is_dir($fullPath)) {
-        abort(404);
+    $candidates = [
+        storage_path('app/public/'.$cleanPath),
+        public_path('storage/'.$cleanPath),
+        public_path($cleanPath),
+    ];
+
+    $fullPath = null;
+    foreach ($candidates as $candidate) {
+        if (file_exists($candidate) && ! is_dir($candidate)) {
+            $fullPath = $candidate;
+            break;
+        }
+    }
+
+    if (! $fullPath) {
+        abort(404, 'File gambar tidak ditemukan.');
     }
 
     $mime = mime_content_type($fullPath) ?: 'application/octet-stream';
 
     return response()->file($fullPath, [
         'Content-Type' => $mime,
-        'Cache-Control' => 'public, max-age=31536000',
+        'Cache-Control' => 'no-cache, no-store, must-revalidate',
+        'Pragma' => 'no-cache',
+        'Expires' => '0',
     ]);
-})->where('path', '.*')->name('storage.fallback');
+};
+
+Route::get('/storage/{path}', $serveStorageFile)->where('path', '.*')->name('storage.fallback');
+Route::get('/media/{path}', $serveStorageFile)->where('path', '.*')->name('media.serve');

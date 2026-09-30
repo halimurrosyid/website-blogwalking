@@ -98,7 +98,7 @@
                                 <svg class="w-4 h-4 {{ request()->routeIs('admin.dashboard') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                                 </svg>
-                                <span>Dashboard</span>
+                                <span>Dashboard Overview</span>
                             </a>
 
                             <a href="{{ route('admin.reviews.index') }}" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.reviews.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
@@ -106,7 +106,7 @@
                                     <svg class="w-4 h-4 {{ request()->routeIs('admin.reviews.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
                                     </svg>
-                                    <span>Verifikasi Komentar</span>
+                                    <span>Verifikasi Tugas & Misi</span>
                                 </div>
                                 @if($pendingCount > 0)
                                     <span class="px-2 py-0.5 text-[11px] font-bold bg-amber-500 text-white rounded-full">{{ $pendingCount }}</span>
@@ -114,15 +114,46 @@
                             </a>
                         </div>
 
-                        <!-- GRUP: MANAJEMEN TIM -->
+                        <!-- GRUP: OPERASIONAL & TARGET -->
                         <div class="space-y-1">
-                            <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Manajemen Tim</div>
+                            <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Operasional & Target</div>
+
+                            <a href="{{ route('admin.targets.index') }}" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.targets.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-4 h-4 {{ request()->routeIs('admin.targets.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+                                    </svg>
+                                    <span>Pool Target URL</span>
+                                </div>
+                                @if($availableTargetsCount > 0)
+                                    <span class="px-2 py-0.5 text-[11px] font-bold bg-emerald-600 text-white rounded-full">{{ $availableTargetsCount }}</span>
+                                @endif
+                            </a>
+
+                            <a href="{{ route('admin.domains.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.domains.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                <svg class="w-4 h-4 {{ request()->routeIs('admin.domains.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
+                                </svg>
+                                <span>Database & Kuota Domain</span>
+                            </a>
+
+                            <a href="{{ route('admin.periods.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.periods.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                <svg class="w-4 h-4 {{ request()->routeIs('admin.periods.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                </svg>
+                                <span>Periode & Target Bulanan</span>
+                            </a>
+                        </div>
+
+                        <!-- GRUP: TIM & PAYROLL -->
+                        <div class="space-y-1">
+                            <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Tim & Payroll</div>
 
                             <a href="{{ route('admin.workers.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.workers.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                                 <svg class="w-4 h-4 {{ request()->routeIs('admin.workers.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
                                 </svg>
-                                <span>Blogwalker & Plotting</span>
+                                <span>Daftar Blogwalker & Plotting</span>
                             </a>
 
                             <a href="{{ route('admin.registrations.index') }}" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.registrations.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
@@ -141,51 +172,20 @@
                                 <svg class="w-4 h-4 {{ request()->routeIs('admin.reports.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
                                 </svg>
-                                <span>Laporan Kinerja</span>
+                                <span>Laporan Kinerja Tim</span>
                             </a>
 
                             <a href="{{ route('admin.payouts.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.payouts.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                                 <svg class="w-4 h-4 {{ request()->routeIs('admin.payouts.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
                                 </svg>
-                                <span>Rekap Gaji / Payroll</span>
-                            </a>
-                        </div>
-
-                        <!-- GRUP: KAMPANYE & TARGET -->
-                        <div class="space-y-1">
-                            <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Kampanye & Target</div>
-
-                            <a href="{{ route('admin.periods.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.periods.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                                <svg class="w-4 h-4 {{ request()->routeIs('admin.periods.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                </svg>
-                                <span>Target & Periode</span>
-                            </a>
-
-                            <a href="{{ route('admin.targets.index') }}" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.targets.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                                <div class="flex items-center gap-3">
-                                    <svg class="w-4 h-4 {{ request()->routeIs('admin.targets.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
-                                    </svg>
-                                    <span>Target URL Pool</span>
-                                </div>
-                                @if($availableTargetsCount > 0)
-                                    <span class="px-2 py-0.5 text-[11px] font-bold bg-emerald-600 text-white rounded-full">{{ $availableTargetsCount }}</span>
-                                @endif
-                            </a>
-
-                            <a href="{{ route('admin.domains.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.domains.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
-                                <svg class="w-4 h-4 {{ request()->routeIs('admin.domains.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9m-9 9a9 9 0 019-9"/>
-                                </svg>
-                                <span>Master Domain</span>
+                                <span>Rekap Gaji & Payroll</span>
                             </a>
                         </div>
 
                         <!-- GRUP: SISTEM -->
                         <div class="space-y-1">
-                            <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Sistem</div>
+                            <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pengaturan</div>
 
                             <a href="{{ route('admin.system.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.system.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                                 <svg class="w-4 h-4 {{ request()->routeIs('admin.system.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -217,7 +217,7 @@
                                     <svg class="w-4 h-4 {{ request()->routeIs('blogwalker.targets.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
                                     </svg>
-                                    <span>Antrean Target</span>
+                                    <span>Antrean Target URL</span>
                                 </div>
                                 @if($availableTargetsCount > 0)
                                     <span class="px-2 py-0.5 text-[11px] font-bold bg-emerald-600 text-white rounded-full">{{ $availableTargetsCount }}</span>
@@ -228,7 +228,7 @@
                                 <svg class="w-4 h-4 {{ request()->routeIs('blogwalker.submissions.create') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
                                 </svg>
-                                <span>+ Kirim Bukti Komentar</span>
+                                <span>+ Kirim Bukti Tugas</span>
                             </a>
 
                             <a href="{{ route('blogwalker.submissions.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('blogwalker.submissions.index') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
@@ -239,6 +239,7 @@
                             </a>
                         </div>
                     @endif
+
 
                 </nav>
 

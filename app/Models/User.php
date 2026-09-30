@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Storage;
 
 #[Fillable([
     'name',
@@ -101,12 +100,36 @@ class User extends Authenticatable
 
     public function getIdCardUrlAttribute(): ?string
     {
-        return $this->id_card_path ? Storage::disk('public')->url($this->id_card_path) : null;
+        if (! $this->id_card_path) {
+            return null;
+        }
+
+        if (preg_match('/^https?:\/\/[^\/]+(\/storage\/.*)$/i', $this->id_card_path, $matches)) {
+            return $matches[1];
+        }
+
+        if (str_starts_with($this->id_card_path, 'http://') || str_starts_with($this->id_card_path, 'https://')) {
+            return $this->id_card_path;
+        }
+
+        return '/storage/'.ltrim($this->id_card_path, '/');
     }
 
     public function getBankBookUrlAttribute(): ?string
     {
-        return $this->bank_book_path ? Storage::disk('public')->url($this->bank_book_path) : null;
+        if (! $this->bank_book_path) {
+            return null;
+        }
+
+        if (preg_match('/^https?:\/\/[^\/]+(\/storage\/.*)$/i', $this->bank_book_path, $matches)) {
+            return $matches[1];
+        }
+
+        if (str_starts_with($this->bank_book_path, 'http://') || str_starts_with($this->bank_book_path, 'https://')) {
+            return $this->bank_book_path;
+        }
+
+        return '/storage/'.ltrim($this->bank_book_path, '/');
     }
 
     public function approvedBy()

@@ -1,5 +1,9 @@
 <?php
 
+use App\Http\Middleware\EnsureAdmin;
+use App\Http\Middleware\EnsureInstalled;
+use App\Http\Middleware\EnsureWorker;
+use App\Http\Middleware\SecurityHeaders;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -13,14 +17,14 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->web(append: [
-            \App\Http\Middleware\SecurityHeaders::class,
-            \App\Http\Middleware\EnsureInstalled::class,
+            SecurityHeaders::class,
+            EnsureInstalled::class,
         ]);
 
         $middleware->alias([
-            'admin' => \App\Http\Middleware\EnsureAdmin::class,
-            'worker' => \App\Http\Middleware\EnsureWorker::class,
-            'blogwalker' => \App\Http\Middleware\EnsureWorker::class,
+            'admin' => EnsureAdmin::class,
+            'worker' => EnsureWorker::class,
+            'blogwalker' => EnsureWorker::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

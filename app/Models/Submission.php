@@ -91,6 +91,17 @@ class Submission extends Model
             return '';
         }
 
-        return Storage::disk('public')->url($this->screenshot_path);
+        $path = $this->screenshot_path;
+
+        // If stored path accidentally includes localhost or full domain, extract /storage path
+        if (preg_match('/^https?:\/\/[^\/]+(\/storage\/.*)$/i', $path, $matches)) {
+            return $matches[1];
+        }
+
+        if (str_starts_with($path, 'http://') || str_starts_with($path, 'https://')) {
+            return $path;
+        }
+
+        return '/storage/'.ltrim($path, '/');
     }
 }

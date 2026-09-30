@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class SystemMaintenanceTest extends TestCase
@@ -119,7 +120,7 @@ class SystemMaintenanceTest extends TestCase
         ]);
 
         $sqlContent = "-- Test Backup\nSELECT 1;\n";
-        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('backup.sql', $sqlContent);
+        $file = UploadedFile::fake()->createWithContent('backup.sql', $sqlContent);
 
         $response = $this->actingAs($admin)->post(route('admin.system.restore'), [
             'backup_file' => $file,

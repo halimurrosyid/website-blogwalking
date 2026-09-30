@@ -124,13 +124,17 @@
                         <!-- KTP Photo -->
                         <td class="px-6 py-4 text-center">
                             @if($app->id_card_url)
-                                <div class="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mx-auto cursor-pointer hover:opacity-80 transition relative group"
+                                <div class="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mx-auto cursor-pointer hover:opacity-80 transition relative group shadow-2xs"
                                     @click="openLightbox('{{ $app->id_card_url }}', 'Foto KTP - {{ $app->name }}')">
-                                    <img src="{{ $app->id_card_url }}" alt="KTP" class="w-full h-full object-cover">
+                                    <img src="{{ $app->id_card_url }}" alt="KTP" class="w-full h-full object-cover"
+                                        onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'64\' height=\'48\' fill=\'%2394a3b8\' viewBox=\'0 0 24 24\'><rect width=\'24\' height=\'24\' fill=\'%23f1f5f9\'/><path d=\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z\'/></svg>'">
                                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white text-[10px] font-bold">
-                                        Zoom
+                                        🔍 Zoom
                                     </div>
                                 </div>
+                                <a href="{{ $app->id_card_url }}" target="_blank" rel="noopener noreferrer" class="text-[10px] text-emerald-600 hover:text-emerald-800 hover:underline block text-center mt-1 font-semibold">
+                                    Buka Foto ↗
+                                </a>
                             @else
                                 <span class="text-xs text-slate-400 italic">-</span>
                             @endif
@@ -139,13 +143,17 @@
                         <!-- Bank Book Photo -->
                         <td class="px-6 py-4 text-center">
                             @if($app->bank_book_url)
-                                <div class="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mx-auto cursor-pointer hover:opacity-80 transition relative group"
+                                <div class="w-16 h-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 mx-auto cursor-pointer hover:opacity-80 transition relative group shadow-2xs"
                                     @click="openLightbox('{{ $app->bank_book_url }}', 'Foto Buku Rekening - {{ $app->name }}')">
-                                    <img src="{{ $app->bank_book_url }}" alt="Buku Rekening" class="w-full h-full object-cover">
+                                    <img src="{{ $app->bank_book_url }}" alt="Buku Rekening" class="w-full h-full object-cover"
+                                        onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'64\' height=\'48\' fill=\'%2394a3b8\' viewBox=\'0 0 24 24\'><rect width=\'24\' height=\'24\' fill=\'%23f1f5f9\'/><path d=\'M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z\'/></svg>'">
                                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition text-white text-[10px] font-bold">
-                                        Zoom
+                                        🔍 Zoom
                                     </div>
                                 </div>
+                                <a href="{{ $app->bank_book_url }}" target="_blank" rel="noopener noreferrer" class="text-[10px] text-emerald-600 hover:text-emerald-800 hover:underline block text-center mt-1 font-semibold">
+                                    Buka Foto ↗
+                                </a>
                             @else
                                 <span class="text-xs text-slate-400 italic">-</span>
                             @endif
@@ -321,11 +329,16 @@
     </div>
 
     <!-- Zoom Lightbox Modal -->
-    <div x-show="lightboxOpen" x-cloak class="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" @click="lightboxOpen = false">
-        <div class="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden p-3" @click.stop>
+    <div x-show="lightboxOpen" x-cloak class="fixed inset-0 z-50 bg-black/85 flex items-center justify-center p-4 backdrop-blur-2xs" @click="lightboxOpen = false">
+        <div class="relative max-w-4xl max-h-[90vh] bg-slate-900 rounded-2xl overflow-hidden p-3 shadow-2xl border border-slate-700" @click.stop>
             <div class="flex items-center justify-between text-white pb-2 px-1">
                 <span class="text-xs font-semibold" x-text="lightboxTitle"></span>
-                <button @click="lightboxOpen = false" class="text-white hover:text-rose-400 font-bold text-lg">&times;</button>
+                <div class="flex items-center gap-2">
+                    <a :href="lightboxImg" target="_blank" rel="noopener noreferrer" class="px-3 py-1 rounded-full bg-black/60 hover:bg-black/90 text-white text-xs font-semibold transition flex items-center gap-1">
+                        Buka Ukuran Asli ↗
+                    </a>
+                    <button @click="lightboxOpen = false" class="text-white hover:text-rose-400 font-bold text-lg cursor-pointer">&times;</button>
+                </div>
             </div>
             <img :src="lightboxImg" alt="Preview Dokumen" class="max-h-[80vh] w-auto mx-auto object-contain rounded-xl">
         </div>

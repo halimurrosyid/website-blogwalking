@@ -105,11 +105,16 @@ class SystemMaintenanceController extends Controller
     public function fixStorageLink(): RedirectResponse
     {
         try {
+            $link = public_path('storage');
+            if (is_link($link)) {
+                @unlink($link);
+            }
+
             Artisan::call('storage:link');
 
             return back()->with('success', 'Storage link berhasil diperbarui! File upload siap diakses publik.');
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal membuat storage link: '.$e->getMessage());
+            return back()->with('error', 'Gagal membuat storage link: '.$e->getMessage().'. Sistem tetap dapat menyajikan gambar secara otomatis melalui fallback route /storage dan /media.');
         }
     }
 
