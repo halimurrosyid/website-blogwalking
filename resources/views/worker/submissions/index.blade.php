@@ -49,9 +49,10 @@
     <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <!-- Period Filter Dropdown & Status Tabs -->
         <div class="flex flex-wrap items-center gap-3">
-            <form method="GET" action="{{ route('blogwalker.submissions.index') }}" class="inline-block">
+            <form method="GET" action="{{ route('blogwalker.submissions.index') }}" class="flex flex-wrap items-center gap-2">
                 <input type="hidden" name="status" value="{{ $currentStatus }}">
                 <input type="hidden" name="search" value="{{ $search }}">
+                
                 <select name="period_id" onchange="this.form.submit()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     <option value="all" {{ $selectedPeriodId === 'all' || $selectedPeriodId === '' ? 'selected' : '' }}>-- Semua Periode --</option>
                     @foreach($periods as $p)
@@ -60,22 +61,29 @@
                         </option>
                     @endforeach
                 </select>
+
+                <select name="task_type" onchange="this.form.submit()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold bg-white text-slate-700 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <option value="">-- Semua Kategori Misi --</option>
+                    @foreach($taskTypes as $k => $t)
+                        <option value="{{ $k }}" {{ ($currentTaskType ?? '') === $k ? 'selected' : '' }}>{{ $t['label'] }}</option>
+                    @endforeach
+                </select>
             </form>
 
             <div class="flex flex-wrap gap-1.5 text-xs font-semibold">
-                <a href="{{ route('blogwalker.submissions.index', ['status' => '', 'period_id' => $selectedPeriodId, 'search' => $search]) }}" 
+                <a href="{{ route('blogwalker.submissions.index', ['status' => '', 'period_id' => $selectedPeriodId, 'task_type' => $currentTaskType, 'search' => $search]) }}" 
                     class="px-3 py-1.5 rounded-lg {{ $currentStatus === '' ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200' }}">
                     Semua
                 </a>
-                <a href="{{ route('blogwalker.submissions.index', ['status' => 'pending', 'period_id' => $selectedPeriodId, 'search' => $search]) }}" 
+                <a href="{{ route('blogwalker.submissions.index', ['status' => 'pending', 'period_id' => $selectedPeriodId, 'task_type' => $currentTaskType, 'search' => $search]) }}" 
                     class="px-3 py-1.5 rounded-lg {{ $currentStatus === 'pending' ? 'bg-amber-600 text-white' : 'bg-amber-50 text-amber-800 hover:bg-amber-100' }}">
                     Menunggu Review
                 </a>
-                <a href="{{ route('blogwalker.submissions.index', ['status' => 'approved', 'period_id' => $selectedPeriodId, 'search' => $search]) }}" 
+                <a href="{{ route('blogwalker.submissions.index', ['status' => 'approved', 'period_id' => $selectedPeriodId, 'task_type' => $currentTaskType, 'search' => $search]) }}" 
                     class="px-3 py-1.5 rounded-lg {{ $currentStatus === 'approved' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100' }}">
                     Disetujui
                 </a>
-                <a href="{{ route('blogwalker.submissions.index', ['status' => 'rejected', 'period_id' => $selectedPeriodId, 'search' => $search]) }}" 
+                <a href="{{ route('blogwalker.submissions.index', ['status' => 'rejected', 'period_id' => $selectedPeriodId, 'task_type' => $currentTaskType, 'search' => $search]) }}" 
                     class="px-3 py-1.5 rounded-lg {{ $currentStatus === 'rejected' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-800 hover:bg-rose-100' }}">
                     Ditolak
                 </a>
@@ -86,6 +94,7 @@
         <form method="GET" action="{{ route('blogwalker.submissions.index') }}" class="flex gap-2">
             <input type="hidden" name="period_id" value="{{ $selectedPeriodId }}">
             <input type="hidden" name="status" value="{{ $currentStatus }}">
+            <input type="hidden" name="task_type" value="{{ $currentTaskType }}">
             <input type="text" name="search" value="{{ $search }}" placeholder="Cari domain atau URL..."
                 class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none w-56">
             <button type="submit" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs">
@@ -102,15 +111,18 @@
                     <tr>
                         <th class="px-6 py-3.5">Bukti Screenshot</th>
                         <th class="px-6 py-3.5">Domain & Target URL</th>
+                        <th class="px-6 py-3.5">Kategori Misi</th>
                         <th class="px-6 py-3.5">Tanggal</th>
-                        <th class="px-6 py-3.5">Jenis Komentar</th>
                         <th class="px-6 py-3.5">Status Verifikasi</th>
                         <th class="px-6 py-3.5">Status Gaji</th>
-                        <th class="px-6 py-3.5 text-right">Tarif</th>
+                        <th class="px-6 py-3.5 text-right">Tarif Komisi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($submissions as $sub)
+                    @php
+                        $subTask = $taskTypes[$sub->task_type ?? 'comment'] ?? $taskTypes['comment'] ?? ['label' => 'Komentar', 'badge' => 'bg-emerald-100 text-emerald-800'];
+                    @endphp
                     <tr class="hover:bg-slate-50/60 transition">
                         <!-- Screenshot Preview -->
                         <td class="px-6 py-4">
@@ -124,11 +136,34 @@
                         </td>
 
                         <!-- Domain & URL -->
-                        <td class="px-6 py-4">
+                        <td class="px-6 py-4 max-w-sm">
                             <span class="font-bold text-slate-900 block text-xs">{{ $sub->domain->root_domain }}</span>
-                            <a href="{{ $sub->target_url }}" target="_blank" class="text-xs text-emerald-600 hover:underline truncate max-w-xs block font-mono">
+                            <a href="{{ $sub->target_url }}" target="_blank" class="text-xs text-slate-500 hover:text-emerald-600 hover:underline truncate block font-mono" title="{{ $sub->target_url }}">
                                 {{ $sub->target_url }}
                             </a>
+                            @if($sub->published_url)
+                                <a href="{{ $sub->published_url }}" target="_blank" class="text-xs font-semibold text-emerald-700 hover:underline truncate block mt-1" title="Hasil Post: {{ $sub->published_url }}">
+                                    🔗 Hasil: {{ $sub->published_url }}
+                                </a>
+                            @endif
+                            @if($sub->client_url)
+                                <div class="text-[11px] text-blue-600 truncate mt-0.5" title="Klien: {{ $sub->client_url }}">
+                                    Klien: {{ $sub->client_url }}
+                                </div>
+                            @endif
+                        </td>
+
+                        <!-- Kategori Misi -->
+                        <td class="px-6 py-4 whitespace-nowrap text-xs">
+                            <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $subTask['badge'] }}">
+                                {{ $subTask['label'] }}
+                            </span>
+                            @if($sub->platform)
+                                <div class="text-[10px] font-semibold text-blue-800 bg-blue-50 px-1.5 py-0.2 rounded mt-1 inline-block">{{ $sub->platform }}</div>
+                            @endif
+                            @if($sub->domain_rating)
+                                <div class="text-[10px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded mt-1 inline-block">DR {{ $sub->domain_rating }}</div>
+                            @endif
                         </td>
 
                         <!-- Date & Period -->
@@ -138,15 +173,6 @@
                                 <span class="text-[10px] text-slate-400 mt-0.5 block">
                                     Periode: {{ $sub->period->name }}
                                 </span>
-                            @endif
-                        </td>
-
-                        <!-- Comment Type -->
-                        <td class="px-6 py-4 whitespace-nowrap text-xs">
-                            @if($sub->comment_type === 'approved_live')
-                                <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Live Langsung</span>
-                            @else
-                                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200">Menunggu Moderasi</span>
                             @endif
                         </td>
 

@@ -46,6 +46,10 @@ class SubmissionController extends Controller
             });
         }
 
+        if ($request->filled('task_type')) {
+            $query->where('task_type', $request->input('task_type'));
+        }
+
         // Calculate summary stats for the selected period
         $statsQuery = Submission::where('user_id', $user->id);
         if ($selectedPeriodId !== '' && $selectedPeriodId !== 'all') {
@@ -68,8 +72,10 @@ class SubmissionController extends Controller
             'periods' => $periods,
             'selectedPeriodId' => $selectedPeriodId,
             'currentStatus' => $request->input('status', ''),
+            'currentTaskType' => $request->input('task_type', ''),
             'search' => $request->input('search', ''),
             'stats' => $stats,
+            'taskTypes' => TaskTypeService::all(),
         ]);
     }
 

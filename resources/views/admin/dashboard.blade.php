@@ -106,16 +106,29 @@
                         </td>
                         <td class="px-6 py-4">
                             <span class="font-bold text-slate-900 block text-xs">{{ $sub->domain->root_domain }}</span>
-                            <a href="{{ $sub->target_url }}" target="_blank" class="text-xs text-emerald-600 hover:underline truncate max-w-xs block font-mono">
+                            <a href="{{ $sub->target_url }}" target="_blank" class="text-xs text-slate-500 hover:text-emerald-600 hover:underline truncate max-w-xs block font-mono" title="{{ $sub->target_url }}">
                                 {{ $sub->target_url }}
                             </a>
+                            @if($sub->published_url)
+                                <a href="{{ $sub->published_url }}" target="_blank" class="text-xs font-semibold text-emerald-700 hover:underline truncate max-w-xs block mt-0.5" title="Hasil Post: {{ $sub->published_url }}">
+                                    🔗 Hasil: {{ $sub->published_url }}
+                                </a>
+                            @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-xs">
-                            @if($sub->comment_type === 'approved_live')
-                                <span class="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200">Live</span>
-                            @else
-                                <span class="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-semibold border border-slate-200">Moderasi</span>
-                            @endif
+                            @php
+                                $taskInfo = $taskTypes[$sub->task_type ?? 'comment'] ?? $taskTypes['comment'] ?? ['label' => 'Komentar', 'badge' => 'bg-emerald-100 text-emerald-800'];
+                            @endphp
+                            <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold {{ $taskInfo['badge'] ?? 'bg-emerald-100 text-emerald-800' }}">
+                                {{ $taskInfo['label'] ?? 'Komentar' }}
+                            </span>
+                            <div class="mt-1">
+                                @if($sub->comment_type === 'approved_live')
+                                    <span class="text-[10px] text-emerald-700 font-medium">Live Langsung</span>
+                                @else
+                                    <span class="text-[10px] text-slate-500 font-medium">Moderasi</span>
+                                @endif
+                            </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap font-bold text-slate-900 text-xs">
                             Rp {{ number_format($sub->rate_amount, 0, ',', '.') }}

@@ -115,6 +115,7 @@ class ReviewController extends Controller
     {
         $status = $request->input('status', 'approved');
         $workerId = $request->input('worker_id');
+        $taskType = $request->input('task_type');
 
         $query = Submission::with(['user', 'domain'])->latest();
 
@@ -126,10 +127,15 @@ class ReviewController extends Controller
             $query->where('user_id', $workerId);
         }
 
-        $submissions = $query->get();
-        $fileName = 'laporan-backlink-'.date('Y-m-d-His').'.csv';
+        if ($taskType) {
+            $query->where('task_type', $taskType);
+        }
 
-        return response()->streamDownload(function () use ($submissions) {
+        $submissions = $query->get();
+        $taskTypes = TaskTypeService::all();
+        $fileName = 'laporan-backlink-misi-'.date('Y-m-d-His').'.csv';
+
+        return response()->streamDownload(function () use ($submissions, $taskTypes) {
             $handle = fopen('php://output', 'w');
             fprintf($handle, chr(0xEF).chr(0xBB).chr(0xBF)); // UTF-8 BOM
 
@@ -137,24 +143,40 @@ class ReviewController extends Controller
                 'ID',
                 'Tanggal Submit',
                 'Nama Blogwalker',
+                'Kategori Misi',
                 'Root Domain',
-                'Ekstensi TLD',
-                'URL Target Komentar',
+                'IP Address',
+                'Subnet C-Class',
+                'URL Target / Website',
+                'URL Postingan Live (Hasil)',
+                'URL Backlink Klien',
+                'Anchor Text / Keyword',
+                'Platform Medsos',
+                'Domain Rating (DR)',
                 'Tipe Komentar',
                 'Status Review',
                 'Status Bayar',
-                'Tarif (Rp)',
+                'Tarif Komisi (Rp)',
                 'URL Bukti Screenshot',
             ]);
 
             foreach ($submissions as $sub) {
+                $categoryLabel = $taskTypes[$sub->task_type ?? 'comment']['label'] ?? 'Backlink Komentar';
+
                 fputcsv($handle, array_map([$this, 'sanitizeCsv'], [
                     $sub->id,
                     $sub->created_at->format('Y-m-d H:i:s'),
                     $sub->user?->name ?? 'Unknown',
+                    $categoryLabel,
                     $sub->domain?->root_domain ?? '-',
-                    $sub->domain?->tld ?? '-',
+                    $sub->domain?->ip_address ?? '-',
+                    $sub->domain?->ip_subnet ?? '-',
                     $sub->target_url,
+                    $sub->published_url ?? '-',
+                    $sub->client_url ?? '-',
+                    $sub->keyword ?? '-',
+                    $sub->platform ?? '-',
+                    $sub->domain_rating ?? '-',
                     $sub->comment_type === 'approved_live' ? 'Live Langsung' : 'Awaiting Moderation',
                     strtoupper($sub->review_status),
                     $sub->is_paid ? 'Lunas' : 'Belum Dibayar',

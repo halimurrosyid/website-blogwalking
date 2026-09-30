@@ -18,7 +18,9 @@
             </div>
             <p class="text-sm text-slate-500 mt-1">
                 TLD: <span class="font-mono font-bold text-slate-700">{{ $domain->tld }}</span> &bull; 
-                Total URL Terpakai: <span class="font-bold text-slate-900">{{ $domain->url_count }}/{{ $domain->max_limit }}</span>
+                Total URL Terpakai: <span class="font-bold text-slate-900">{{ $domain->url_count }}/{{ $domain->max_limit }}</span> &bull; 
+                IP Address: <span class="font-mono font-bold text-slate-700">{{ $domain->ip_address ?? 'Belum terdeteksi' }}</span> &bull; 
+                Subnet C-Class: <span class="font-mono font-bold text-slate-700">{{ $domain->ip_subnet ?? '-' }}</span>
             </p>
         </div>
         <div class="flex items-center gap-2">

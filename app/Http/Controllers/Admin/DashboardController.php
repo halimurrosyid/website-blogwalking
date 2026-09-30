@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Domain;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\TaskTypeService;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
@@ -42,6 +43,7 @@ class DashboardController extends Controller
             'stats' => $stats,
             'pendingSubmissions' => $pendingSubmissions,
             'topWorkers' => $topWorkers,
+            'taskTypes' => TaskTypeService::all(),
         ]);
     }
 }

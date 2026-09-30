@@ -8,6 +8,7 @@ use App\Models\Submission;
 use App\Models\TargetUrl;
 use App\Services\DomainService;
 use App\Services\PeriodService;
+use App\Services\TaskTypeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -81,6 +82,7 @@ class DashboardController extends Controller
             'recentSubmissions' => $recentSubmissions,
             'availableTargets' => $availableTargets,
             'myActiveTargets' => $myActiveTargets,
+            'taskTypes' => TaskTypeService::all(),
         ]);
     }
 
