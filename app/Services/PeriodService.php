@@ -9,64 +9,80 @@ use App\Models\Period;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class PeriodService
 {
     /**
      * Get or automatically initialize the active period for current month.
      */
-    public function getActivePeriod(): Period
+    public function getActivePeriod(): ?Period
     {
-        $active = Period::where('status', 'active')->first();
+        try {
+            $active = Period::where('status', 'active')->first();
 
-        if ($active) {
-            return $active;
-        }
+            if ($active) {
+                return $active;
+            }
 
-        // Auto create period for current month if none active
-        $now = Carbon::now();
-        $indonesianMonths = [
-            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
-            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
-            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
-        ];
+            // Auto create period for current month if none active
+            $now = Carbon::now();
+            $indonesianMonths = [
+                1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember',
+            ];
 
-        $name = ($indonesianMonths[$now->month] ?? $now->format('F')).' '.$now->year;
+            $name = ($indonesianMonths[$now->month] ?? $now->format('F')).' '.$now->year;
 
-        $period = Period::create([
-            'name' => $name,
-            'month' => $now->month,
-            'year' => $now->year,
-            'min_target' => (int) AppSetting::get('default_monthly_target', 100),
-            'max_target' => null,
-            'max_urls_per_domain' => (int) AppSetting::get('max_urls_per_domain', 5),
-            'status' => 'active',
-            'starts_at' => $now->copy()->startOfMonth()->toDateString(),
-            'ends_at' => $now->copy()->endOfMonth()->toDateString(),
-        ]);
-
-        // Auto assign existing active blogwalkers to this initial period
-        $blogwalkers = User::where('role', 'blogwalker')->where('is_active', true)->get();
-        foreach ($blogwalkers as $bw) {
-            $lastAssignment = Assignment::where('user_id', $bw->id)->latest()->first();
-
-            Assignment::create([
-                'period_id' => $period->id,
-                'user_id' => $bw->id,
-                'allowed_tlds' => $lastAssignment?->allowed_tlds,
-                'target_keywords' => $lastAssignment?->target_keywords ?? 'jasa seo website',
-                'target_backlink_url' => $lastAssignment?->target_backlink_url ?? 'https://klien-kami.com',
-                'custom_instructions' => $lastAssignment?->custom_instructions,
-                'min_target' => $lastAssignment?->min_target ?? $period->min_target,
-                'max_target' => $lastAssignment?->max_target ?? $period->max_target,
+            $period = Period::create([
+                'name' => $name,
+                'month' => $now->month,
+                'year' => $now->year,
+                'min_target' => (int) AppSetting::get('default_monthly_target', 100),
+                'max_target' => null,
+                'max_urls_per_domain' => (int) AppSetting::get('max_urls_per_domain', 5),
                 'status' => 'active',
-                'is_eligible_next_period' => true,
-                'is_active' => true,
+                'starts_at' => $now->copy()->startOfMonth()->toDateString(),
+                'ends_at' => $now->copy()->endOfMonth()->toDateString(),
             ]);
-        }
 
-        return $period;
+            // Auto assign existing active blogwalkers to this initial period
+            $blogwalkers = User::where('role', 'blogwalker')->where('is_active', true)->get();
+            foreach ($blogwalkers as $bw) {
+                $lastAssignment = Assignment::where('user_id', $bw->id)->latest()->first();
+
+                Assignment::create([
+                    'period_id' => $period->id,
+                    'user_id' => $bw->id,
+                    'allowed_tlds' => $lastAssignment?->allowed_tlds,
+                    'target_keywords' => $lastAssignment?->target_keywords ?? 'jasa seo website',
+                    'target_backlink_url' => $lastAssignment?->target_backlink_url ?? 'https://klien-kami.com',
+                    'custom_instructions' => $lastAssignment?->custom_instructions,
+                    'min_target' => $lastAssignment?->min_target ?? $period->min_target,
+                    'max_target' => $lastAssignment?->max_target ?? $period->max_target,
+                    'status' => 'active',
+                    'is_eligible_next_period' => true,
+                    'is_active' => true,
+                ]);
+            }
+
+            return $period;
+        } catch (\Throwable $e) {
+            Log::warning('getActivePeriod failed, attempting auto-migrate: '.$e->getMessage());
+
+            try {
+                Artisan::call('migrate', ['--force' => true]);
+
+                return Period::where('status', 'active')->first();
+            } catch (\Throwable $migrationError) {
+                Log::error('Auto-migration in getActivePeriod failed: '.$migrationError->getMessage());
+
+                return null;
+            }
+        }
     }
 
     /**

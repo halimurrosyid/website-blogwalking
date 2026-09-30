@@ -4,6 +4,9 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureInstalled
@@ -33,8 +36,38 @@ class EnsureInstalled
             if ($isInstallRoute) {
                 return redirect()->route('login');
             }
+
+            // Self-healing database: Automatically migrate pending migrations when needed (Hostinger/cPanel friendly)
+            $this->ensureDatabaseUpToDate();
         }
 
         return $next($request);
+    }
+
+    /**
+     * Ensure database tables and columns are up to date automatically
+     * without requiring SSH terminal on shared hosting (e.g. Hostinger).
+     */
+    protected function ensureDatabaseUpToDate(): void
+    {
+        $markerFile = storage_path('framework/schema_v3.migrated');
+
+        if (file_exists($markerFile)) {
+            return;
+        }
+
+        try {
+            // Check if essential tables or columns exist; if any are missing, run migrate
+            if (! Schema::hasTable('periods') ||
+                ! Schema::hasTable('app_settings') ||
+                ! Schema::hasColumn('domains', 'ip_subnet') ||
+                ! Schema::hasColumn('submissions', 'period_id')) {
+                Artisan::call('migrate', ['--force' => true]);
+            }
+
+            @file_put_contents($markerFile, now()->toIso8601String());
+        } catch (\Throwable $e) {
+            Log::warning('Automatic database migration failed or skipped: '.$e->getMessage());
+        }
     }
 }

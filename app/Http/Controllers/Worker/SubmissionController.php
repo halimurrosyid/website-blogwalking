@@ -22,7 +22,7 @@ class SubmissionController extends Controller
     public function index(Request $request): View
     {
         $user = Auth::user();
-        $periods = Period::orderByDesc('starts_at')->get();
+        $periods = rescue(fn () => Period::orderByDesc('starts_at')->get(), collect());
 
         $selectedPeriodId = $request->input('period_id', '');
 
@@ -86,9 +86,11 @@ class SubmissionController extends Controller
         $periodService = app(PeriodService::class);
         $activePeriod = $periodService->getActivePeriod();
         $assignment = Assignment::where('user_id', $user->id)
-            ->where(function ($q) use ($activePeriod) {
-                $q->where('period_id', $activePeriod->id)
-                    ->orWhereNull('period_id');
+            ->when($activePeriod, function ($query, $period) {
+                $query->where(function ($q) use ($period) {
+                    $q->where('period_id', $period->id)
+                        ->orWhereNull('period_id');
+                });
             })
             ->latest()
             ->first();

@@ -9,6 +9,7 @@ use App\Models\Submission;
 use App\Models\User;
 use App\Services\PeriodService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -16,8 +17,8 @@ class ReportController extends Controller
 {
     public function index(Request $request, PeriodService $periodService): View
     {
-        $periods = Period::orderByDesc('starts_at')->get();
-        $workers = User::where('role', 'blogwalker')->orderBy('name')->get();
+        $periods = rescue(fn () => Period::orderByDesc('starts_at')->get(), collect());
+        $workers = rescue(fn () => User::where('role', 'blogwalker')->orderBy('name')->get(), collect());
 
         $selectedPeriodId = $request->input('period_id');
         $selectedWorkerId = $request->input('worker_id');
@@ -30,7 +31,7 @@ class ReportController extends Controller
 
         $selectedPeriod = null;
         if ($selectedPeriodId !== 'all') {
-            $selectedPeriod = Period::find($selectedPeriodId);
+            $selectedPeriod = rescue(fn () => Period::find($selectedPeriodId), null);
             if (! $selectedPeriod && $periods->isNotEmpty()) {
                 $selectedPeriod = $periods->first();
                 $selectedPeriodId = $selectedPeriod->id;
@@ -39,7 +40,7 @@ class ReportController extends Controller
 
         // Submissions Query
         $subQuery = Submission::query();
-        if ($selectedPeriod) {
+        if ($selectedPeriod && Schema::hasColumn('submissions', 'period_id')) {
             $subQuery->where('period_id', $selectedPeriod->id);
         }
         if ($selectedWorkerId) {
@@ -71,7 +72,7 @@ class ReportController extends Controller
 
         foreach ($targetWorkers as $worker) {
             $workerSubQuery = Submission::where('user_id', $worker->id);
-            if ($selectedPeriod) {
+            if ($selectedPeriod && Schema::hasColumn('submissions', 'period_id')) {
                 $workerSubQuery->where('period_id', $selectedPeriod->id);
             }
 
@@ -94,7 +95,7 @@ class ReportController extends Controller
                 $assignment = Assignment::where('user_id', $worker->id)->latest()->first();
             }
 
-            $minTarget = $assignment?->min_target ?? ($selectedPeriod?->min_target_default ?? 100);
+            $minTarget = $assignment?->min_target ?? ($selectedPeriod?->min_target ?? 100);
             $progressPercent = min(100, round(($wApproved / max(1, $minTarget)) * 100, 1));
 
             // Status label & badge
@@ -176,13 +177,13 @@ class ReportController extends Controller
 
         $period = null;
         if ($selectedPeriodId && $selectedPeriodId !== 'all') {
-            $period = Period::find($selectedPeriodId);
+            $period = rescue(fn () => Period::find($selectedPeriodId), null);
         }
 
         $periodName = $period ? str_replace(' ', '_', $period->name) : 'Semua_Periode';
         $filename = "Laporan_Kinerja_Blogwalker_{$periodName}_".date('Ymd_His').'.csv';
 
-        $workers = User::where('role', 'blogwalker')->orderBy('name')->get();
+        $workers = rescue(fn () => User::where('role', 'blogwalker')->orderBy('name')->get(), collect());
         if ($selectedWorkerId) {
             $workers = $workers->where('id', $selectedWorkerId);
         }
@@ -220,7 +221,7 @@ class ReportController extends Controller
 
             foreach ($workers as $worker) {
                 $subQuery = Submission::where('user_id', $worker->id);
-                if ($period) {
+                if ($period && Schema::hasColumn('submissions', 'period_id')) {
                     $subQuery->where('period_id', $period->id);
                 }
 
@@ -242,7 +243,7 @@ class ReportController extends Controller
                     $assignment = Assignment::where('user_id', $worker->id)->latest()->first();
                 }
 
-                $minTarget = $assignment?->min_target ?? ($period?->min_target_default ?? 100);
+                $minTarget = $assignment?->min_target ?? ($period?->min_target ?? 100);
                 $percent = round(($approved / max(1, $minTarget)) * 100, 1);
 
                 $status = 'Sedang Berjalan';

@@ -56,6 +56,16 @@ class Period extends Model
         return $this->status === 'closed';
     }
 
+    public function getIsClosedAttribute(): bool
+    {
+        return $this->status === 'closed';
+    }
+
+    public function getIsActiveAttribute(): bool
+    {
+        return $this->status === 'active';
+    }
+
     public function remainingDays(): int
     {
         if ($this->isClosed()) {

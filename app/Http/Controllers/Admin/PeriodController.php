@@ -22,11 +22,22 @@ class PeriodController extends Controller
         $activePeriod = $this->periodService->getActivePeriod();
 
         // Load assignments with progress
-        $assignments = $activePeriod->assignments()->with('user')->get();
+        $assignments = $activePeriod ? $activePeriod->assignments()->with('user')->get() : collect();
         $participants = [];
 
         foreach ($assignments as $assignment) {
-            $progress = $activePeriod->progressForUser($assignment->user, $assignment);
+            $progress = $activePeriod
+                ? $activePeriod->progressForUser($assignment->user, $assignment)
+                : [
+                    'approved' => 0,
+                    'pending' => 0,
+                    'total' => 0,
+                    'target' => 100,
+                    'percentage' => 0.0,
+                    'is_qualified' => false,
+                    'remaining_needed' => 100,
+                ];
+
             $participants[] = [
                 'assignment' => $assignment,
                 'user' => $assignment->user,
@@ -40,10 +51,10 @@ class PeriodController extends Controller
         });
 
         // Past closed periods
-        $pastPeriods = Period::where('status', 'closed')
+        $pastPeriods = rescue(fn () => Period::where('status', 'closed')
             ->latest('closed_at')
             ->take(12)
-            ->get();
+            ->get(), collect());
 
         return view('admin.periods.index', compact('activePeriod', 'participants', 'pastPeriods'));
     }

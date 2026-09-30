@@ -21,16 +21,24 @@ class AppSetting extends Model
 
     public static function get(string $key, $default = null): mixed
     {
-        $setting = static::find($key);
+        try {
+            $setting = static::find($key);
 
-        return $setting ? $setting->value : $default;
+            return $setting ? $setting->value : $default;
+        } catch (\Throwable $e) {
+            return $default;
+        }
     }
 
     public static function set(string $key, $value): void
     {
-        static::updateOrCreate(
-            ['key' => $key],
-            ['value' => $value]
-        );
+        try {
+            static::updateOrCreate(
+                ['key' => $key],
+                ['value' => $value]
+            );
+        } catch (\Throwable $e) {
+            // Ignore if table not ready yet
+        }
     }
 }

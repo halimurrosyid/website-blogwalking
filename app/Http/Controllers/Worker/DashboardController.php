@@ -62,14 +62,26 @@ class DashboardController extends Controller
         $periodService = app(PeriodService::class);
         $activePeriod = $periodService->getActivePeriod();
         $assignment = Assignment::where('user_id', $user->id)
-            ->where(function ($q) use ($activePeriod) {
-                $q->where('period_id', $activePeriod->id)
-                    ->orWhereNull('period_id');
+            ->when($activePeriod, function ($query, $period) {
+                $query->where(function ($q) use ($period) {
+                    $q->where('period_id', $period->id)
+                        ->orWhereNull('period_id');
+                });
             })
             ->latest()
             ->first();
 
-        $periodProgress = $activePeriod->progressForUser($user, $assignment);
+        $periodProgress = $activePeriod
+            ? $activePeriod->progressForUser($user, $assignment)
+            : [
+                'approved' => 0,
+                'pending' => 0,
+                'total' => 0,
+                'target' => 100,
+                'percentage' => 0.0,
+                'is_qualified' => false,
+                'remaining_needed' => 100,
+            ];
         $isDisqualified = $assignment ? $assignment->isDisqualified() : false;
 
         return view('worker.dashboard', [

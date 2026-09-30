@@ -73,6 +73,7 @@ class SystemMaintenanceController extends Controller
     {
         try {
             Artisan::call('optimize:clear');
+            @unlink(storage_path('framework/schema_v3.migrated'));
 
             return back()->with('success', 'Cache sistem berhasil dibersihkan! (Config, Route, View, Application Cache)');
         } catch (\Exception $e) {
@@ -87,6 +88,7 @@ class SystemMaintenanceController extends Controller
     {
         try {
             Artisan::call('migrate', ['--force' => true]);
+            @touch(storage_path('framework/schema_v3.migrated'));
             $output = trim(Artisan::output());
 
             $message = ! empty($output) ? $output : 'Pembaruan struktur database berhasil dijalankan!';
