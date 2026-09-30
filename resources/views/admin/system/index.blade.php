@@ -121,7 +121,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
                     </svg>
                 </div>
-                <h3 class="text-sm font-bold text-slate-900">Backup & Migrasi Data</h3>
+                <h3 class="text-sm font-bold text-slate-900">Backup &amp; Migrasi Data</h3>
                 <p class="text-xs text-slate-500 mt-1 leading-relaxed">
                     Unduh cadangan database SQL atau paket lengkap ZIP (termasuk foto bukti & KTP) langsung ke perangkat Anda.
                 </p>
@@ -140,6 +140,125 @@
             </div>
         </div>
 
+    </div>
+
+    <!-- Pengaturan Master Tarif Default Misi (Opsi A) -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <span class="text-base">💰</span>
+                    Master Tarif Default Misi & Tugas Blogwalker (Opsi A)
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">
+                    Atur tarif komisi standar yang diterima blogwalker untuk setiap jenis misi. Anda juga tetap bisa mengubah tarif secara fleksibel per target URL saat input massal.
+                </p>
+            </div>
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                Sistem Dinamis Opsi A
+            </span>
+        </div>
+
+        <form method="POST" action="{{ route('admin.system.update-rates') }}" class="p-6 space-y-6">
+            @csrf
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- 1. Komentar Backlink -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-100 text-emerald-800">1. KOMENTAR</span>
+                        <span class="text-[11px] text-slate-400 font-mono">rate_comment</span>
+                    </div>
+                    <label class="block text-xs font-semibold text-slate-800">
+                        Tarif Standar Komentar Blog
+                    </label>
+                    <p class="text-[11px] text-slate-500">Komentar relevan pada artikel blog eksternal.</p>
+                    <div class="relative pt-1">
+                        <span class="absolute inset-y-0 left-0 pt-1 pl-3 flex items-center text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" step="50" min="0" name="rate_comment" value="{{ $taskTypes['comment']['default_rate'] ?? 750 }}"
+                            class="w-full pl-9 pr-3 py-2 text-sm font-bold border-slate-300 rounded-lg bg-white focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- 2. Guestpost -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-blue-100 text-blue-800">2. GUESTPOST</span>
+                        <span class="text-[11px] text-slate-400 font-mono">rate_guestpost</span>
+                    </div>
+                    <label class="block text-xs font-semibold text-slate-800">
+                        Tarif Standar Guestpost Eksternal
+                    </label>
+                    <p class="text-[11px] text-slate-500">Menulis artikel di web eksternal + link target klien.</p>
+                    <div class="relative pt-1">
+                        <span class="absolute inset-y-0 left-0 pt-1 pl-3 flex items-center text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" step="50" min="0" name="rate_guestpost" value="{{ $taskTypes['guestpost']['default_rate'] ?? 2000 }}"
+                            class="w-full pl-9 pr-3 py-2 text-sm font-bold border-slate-300 rounded-lg bg-white focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- 3. Konten Sosmed -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-purple-100 text-purple-800">3. SOSIAL MEDIA</span>
+                        <span class="text-[11px] text-slate-400 font-mono">rate_social_media</span>
+                    </div>
+                    <label class="block text-xs font-semibold text-slate-800">
+                        Tarif Konten Medsos Evergreen
+                    </label>
+                    <p class="text-[11px] text-slate-500">Posting konten FB, X, LinkedIn dll + link klien.</p>
+                    <div class="relative pt-1">
+                        <span class="absolute inset-y-0 left-0 pt-1 pl-3 flex items-center text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" step="50" min="0" name="rate_social_media" value="{{ $taskTypes['social_media']['default_rate'] ?? 1500 }}"
+                            class="w-full pl-9 pr-3 py-2 text-sm font-bold border-slate-300 rounded-lg bg-white focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- 4. Komentar High DR -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-800">4. HIGH DR (>40)</span>
+                        <span class="text-[11px] text-slate-400 font-mono">rate_comment_high_dr</span>
+                    </div>
+                    <label class="block text-xs font-semibold text-slate-800">
+                        Tarif Komentar Domain Tinggi (DR > 40)
+                    </label>
+                    <p class="text-[11px] text-slate-500">Komentar di website otoritas tinggi kredibel.</p>
+                    <div class="relative pt-1">
+                        <span class="absolute inset-y-0 left-0 pt-1 pl-3 flex items-center text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" step="50" min="0" name="rate_comment_high_dr" value="{{ $taskTypes['comment_high_dr']['default_rate'] ?? 1000 }}"
+                            class="w-full pl-9 pr-3 py-2 text-sm font-bold border-slate-300 rounded-lg bg-white focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                </div>
+
+                <!-- 5. Post Artikel Internal -->
+                <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">5. POST ARTIKEL</span>
+                        <span class="text-[11px] text-slate-400 font-mono">rate_internal_article</span>
+                    </div>
+                    <label class="block text-xs font-semibold text-slate-800">
+                        Tarif Standar Artikel Internal / PBN
+                    </label>
+                    <p class="text-[11px] text-slate-500">Posting artikel lengkap di jaringan blog internal.</p>
+                    <div class="relative pt-1">
+                        <span class="absolute inset-y-0 left-0 pt-1 pl-3 flex items-center text-slate-400 font-bold text-xs">Rp</span>
+                        <input type="number" step="500" min="0" name="rate_internal_article" value="{{ $taskTypes['internal_article']['default_rate'] ?? 10000 }}"
+                            class="w-full pl-9 pr-3 py-2 text-sm font-bold border-slate-300 rounded-lg bg-white focus:ring-emerald-500 focus:border-emerald-500">
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <span class="text-xs text-slate-500">
+                    💡 Perubahan tarif default ini langsung berlaku untuk semua target baru yang diinput tanpa tarif khusus.
+                </span>
+                <button type="submit" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs transition flex items-center justify-center gap-2 cursor-pointer">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                    <span>Simpan Pengaturan Master Tarif</span>
+                </button>
+            </div>
+        </form>
     </div>
 
     <!-- Pusat Migrasi, Backup & Restore Data -->

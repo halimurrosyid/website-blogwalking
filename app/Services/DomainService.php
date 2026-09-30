@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Assignment;
 use App\Models\Domain;
 use App\Models\Submission;
+use App\Models\TargetUrl;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -192,6 +193,52 @@ class DomainService
     }
 
     /**
+     * Known domains exempt from the 5-URL root domain quota (e.g. social media platforms).
+     *
+     * @var array<string>
+     */
+    protected static array $unlimitedDomains = [
+        'facebook.com',
+        'x.com',
+        'twitter.com',
+        'instagram.com',
+        'linkedin.com',
+        'pinterest.com',
+        'tiktok.com',
+        'threads.net',
+        'youtube.com',
+        'medium.com',
+    ];
+
+    /**
+     * Resolve IP address and C-Class subnet for a root domain.
+     *
+     * @return array{ip: ?string, subnet: ?string}
+     */
+    public function resolveIpAndSubnet(string $rootDomain): array
+    {
+        try {
+            $host = preg_replace('/:\d+$/', '', trim($rootDomain));
+            $ip = @gethostbyname($host);
+
+            if ($ip === $host || ! filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {
+                return ['ip' => null, 'subnet' => null];
+            }
+
+            // Extract C-Class subnet: e.g. 104.21.58.123 -> 104.21.58.0/24
+            $parts = explode('.', $ip);
+            $subnet = "{$parts[0]}.{$parts[1]}.{$parts[2]}.0/24";
+
+            return [
+                'ip' => $ip,
+                'subnet' => $subnet,
+            ];
+        } catch (\Throwable $e) {
+            return ['ip' => null, 'subnet' => null];
+        }
+    }
+
+    /**
      * Safely record a new submission with database lock.
      *
      * @throws ValidationException
@@ -200,7 +247,15 @@ class DomainService
         User $user,
         string $targetUrl,
         string $screenshotPath,
-        string $commentType = 'approved_live'
+        string $commentType = 'approved_live',
+        string $taskType = 'comment',
+        ?string $clientUrl = null,
+        ?string $keyword = null,
+        ?string $publishedUrl = null,
+        ?string $platform = null,
+        ?float $rewardAmount = null,
+        ?int $domainRating = null,
+        ?int $targetUrlId = null
     ): Submission {
         $parsed = $this->extractRootDomain($targetUrl);
 
@@ -230,8 +285,8 @@ class DomainService
             ]);
         }
 
-        // 3. Validate assigned TLD restriction
-        if ($assignment && ! empty($assignment->allowed_tlds)) {
+        // 3. Validate assigned TLD restriction (skip for social media tasks)
+        if ($taskType !== TaskTypeService::SOCIAL_MEDIA && $assignment && ! empty($assignment->allowed_tlds)) {
             $allowed = array_map(fn ($item) => strtolower(trim($item)), $assignment->allowed_tlds);
             $currentTld = strtolower($tld);
 
@@ -252,40 +307,80 @@ class DomainService
 
             if ($userTotalSubmissions >= $assignment->max_target) {
                 throw ValidationException::withMessages([
-                    'target_url' => "Anda telah mencapai batas maksimal pengerjaan periode ini ({$assignment->max_target} URL).",
+                    'target_url' => "Anda telah mencapai batas maksimal pengerjaan periode ini ({$assignment->max_target} tugas).",
                 ]);
             }
         }
 
         $maxDomainLimit = $activePeriod->max_urls_per_domain ?? 5;
+        $isExemptDomain = in_array(strtolower($rootDomain), self::$unlimitedDomains, true) || $taskType === TaskTypeService::SOCIAL_MEDIA;
 
-        return DB::transaction(function () use ($user, $targetUrl, $screenshotPath, $commentType, $rootDomain, $tld, $activePeriod, $maxDomainLimit) {
+        // Resolve rate amount
+        $rateToPay = $rewardAmount ?? TaskTypeService::getRate($taskType);
+        if ($rateToPay <= 0) {
+            $rateToPay = $user->default_rate ?? 700.00;
+        }
+
+        return DB::transaction(function () use (
+            $user,
+            $targetUrl,
+            $screenshotPath,
+            $commentType,
+            $taskType,
+            $clientUrl,
+            $keyword,
+            $publishedUrl,
+            $platform,
+            $rateToPay,
+            $domainRating,
+            $targetUrlId,
+            $rootDomain,
+            $tld,
+            $activePeriod,
+            $maxDomainLimit,
+            $isExemptDomain
+        ) {
+            // Resolve IP and Subnet
+            $ipData = $this->resolveIpAndSubnet($rootDomain);
+
             // Lock or create domain
             $domain = Domain::lockForUpdate()->firstOrCreate(
                 ['root_domain' => $rootDomain],
                 [
                     'tld' => $tld,
+                    'ip_address' => $ipData['ip'],
+                    'ip_subnet' => $ipData['subnet'],
                     'url_count' => 0,
-                    'max_limit' => $maxDomainLimit,
+                    'max_limit' => $isExemptDomain ? 999999 : $maxDomainLimit,
                     'is_locked' => false,
                 ]
             );
 
-            if ($domain->is_locked || $domain->url_count >= $domain->max_limit) {
+            // Update IP if previously missing
+            if (empty($domain->ip_subnet) && ! empty($ipData['subnet'])) {
+                $domain->update([
+                    'ip_address' => $ipData['ip'],
+                    'ip_subnet' => $ipData['subnet'],
+                ]);
+            }
+
+            if (! $isExemptDomain && ($domain->is_locked || $domain->url_count >= $domain->max_limit)) {
                 throw ValidationException::withMessages([
                     'target_url' => "Maaf, domain [{$rootDomain}] sudah mencapai batas maksimal {$domain->max_limit} URL dan telah dikunci.",
                 ]);
             }
 
-            // Check if exact target_url has already been submitted
-            $duplicate = Submission::where('domain_id', $domain->id)
-                ->where('target_url', $targetUrl)
-                ->exists();
+            // Check if exact target_url has already been submitted (unless social media)
+            if (! $isExemptDomain) {
+                $duplicate = Submission::where('domain_id', $domain->id)
+                    ->where('target_url', $targetUrl)
+                    ->exists();
 
-            if ($duplicate) {
-                throw ValidationException::withMessages([
-                    'target_url' => 'URL spesifik ini sudah pernah disubmit sebelumnya di sistem.',
-                ]);
+                if ($duplicate) {
+                    throw ValidationException::withMessages([
+                        'target_url' => 'URL spesifik ini sudah pernah disubmit sebelumnya di sistem.',
+                    ]);
+                }
             }
 
             // Create submission linked to active period
@@ -293,20 +388,37 @@ class DomainService
                 'period_id' => $activePeriod->id,
                 'user_id' => $user->id,
                 'domain_id' => $domain->id,
+                'target_url_id' => $targetUrlId,
+                'task_type' => $taskType,
                 'target_url' => $targetUrl,
+                'client_url' => $clientUrl,
+                'keyword' => $keyword,
+                'published_url' => $publishedUrl ?? $targetUrl,
+                'platform' => $platform,
+                'domain_rating' => $domainRating,
                 'screenshot_path' => $screenshotPath,
                 'comment_type' => $commentType,
                 'review_status' => 'pending',
-                'rate_amount' => $user->default_rate ?? 700.00,
+                'rate_amount' => $rateToPay,
                 'is_paid' => false,
             ]);
 
-            // Increment count & check limit
-            $domain->url_count += 1;
-            if ($domain->url_count >= $domain->max_limit) {
-                $domain->is_locked = true;
+            // Increment count & check limit (if not exempt)
+            if (! $isExemptDomain) {
+                $domain->url_count += 1;
+                if ($domain->url_count >= $domain->max_limit) {
+                    $domain->is_locked = true;
+                }
+                $domain->save();
             }
-            $domain->save();
+
+            // If linked to a target_url, update its status
+            if ($targetUrlId) {
+                TargetUrl::where('id', $targetUrlId)->update([
+                    'status' => 'completed',
+                    'submission_id' => $submission->id,
+                ]);
+            }
 
             return $submission;
         });

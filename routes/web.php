@@ -95,6 +95,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/domains/{domain}', [DomainController::class, 'show'])->name('domains.show');
     Route::post('/domains/{domain}/reset', [DomainController::class, 'reset'])->name('domains.reset');
     Route::post('/domains/bulk-reset', [DomainController::class, 'bulkReset'])->name('domains.bulk-reset');
+    Route::post('/domains/refresh-subnets', [DomainController::class, 'refreshSubnets'])->name('domains.refresh-subnets');
 
     // Payout / Payroll
     Route::get('/payouts', [PayoutController::class, 'index'])->name('payouts.index');
@@ -120,5 +121,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/system/backup-full', [SystemMaintenanceController::class, 'backupFullZip'])->name('system.backup-full');
     Route::post('/system/restore', [SystemMaintenanceController::class, 'restoreBackup'])->name('system.restore');
     Route::post('/system/update-domain', [SystemMaintenanceController::class, 'updateAppUrl'])->name('system.update-domain');
+    Route::post('/system/update-rates', [SystemMaintenanceController::class, 'updateRates'])->name('system.update-rates');
     Route::post('/system/reset-installer', [SystemMaintenanceController::class, 'resetInstaller'])->name('system.reset-installer');
 });

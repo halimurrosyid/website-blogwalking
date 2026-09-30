@@ -18,26 +18,38 @@
 
     <!-- Active Target URL Task Banner -->
     @if(isset($target) && $target)
-    <div class="mb-6 p-5 rounded-2xl bg-emerald-900 text-white shadow-md border border-emerald-700/50 space-y-2">
+    @php
+        $targetTask = $taskTypes[$target->task_type ?? 'comment'] ?? $taskTypes['comment'];
+        $effectiveRate = $target->getEffectiveRate();
+    @endphp
+    <div class="mb-6 p-5 rounded-2xl bg-slate-900 text-white shadow-md border border-slate-700 space-y-3">
         <div class="flex items-center justify-between">
-            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
-                <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                Tugas Antrean Target
+            <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold {{ $targetTask['badge'] }}">
+                <span class="w-2 h-2 rounded-full bg-current animate-pulse"></span>
+                Misi: {{ $targetTask['label'] }}
             </span>
-            <a href="{{ $target->url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1 bg-emerald-700 hover:bg-emerald-600 rounded-lg text-xs font-semibold text-white transition">
-                <span>Buka Website Target</span>
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
-            </a>
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-1 rounded-lg border border-emerald-600/40">
+                    Reward: Rp {{ number_format($effectiveRate, 0, ',', '.') }}
+                </span>
+                <a href="{{ $target->url }}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1 px-3 py-1 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-xs font-semibold text-white transition">
+                    <span>Buka Target</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                </a>
+            </div>
         </div>
         <div class="text-sm font-semibold text-white break-all">
             {{ $target->url }}
         </div>
-        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-emerald-200/90 pt-1 border-t border-emerald-800">
+        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-300 pt-2 border-t border-slate-800">
+            @if($target->client_url)
+                <div class="text-blue-300">🔗 Target Klien: <strong class="text-white">{{ $target->client_url }}</strong></div>
+            @endif
             @if($target->keyword)
-                <div>Keyword Target: <strong class="text-white">{{ $target->keyword }}</strong></div>
+                <div>Keyword: <strong class="text-white">{{ $target->keyword }}</strong></div>
             @endif
             @if($target->notes)
-                <div>Instruksi: <span class="italic text-emerald-100">{{ $target->notes }}</span></div>
+                <div>Instruksi: <span class="italic text-slate-300">{{ $target->notes }}</span></div>
             @endif
             <div>Domain: <strong class="font-mono text-white">{{ $target->root_domain }}</strong></div>
         </div>
@@ -65,30 +77,141 @@
 
             @if(isset($target) && $target)
                 <input type="hidden" name="target_id" value="{{ $target->id }}">
+                <input type="hidden" name="task_type" value="{{ $target->task_type ?? 'comment' }}">
+            @else
+                <!-- Category Selector for Manual Submission -->
+                <div>
+                    <label for="task_type" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                        🎯 Kategori Misi yang Dikerjakan <span class="text-rose-500">*</span>
+                    </label>
+                    <select
+                        name="task_type"
+                        id="task_type"
+                        x-model="taskType"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm font-semibold bg-white"
+                    >
+                        @foreach($taskTypes as $key => $type)
+                            <option value="{{ $key }}" {{ old('task_type', 'comment') === $key ? 'selected' : '' }}>
+                                {{ $type['label'] }} (Standar Reward: Rp {{ number_format($type['default_rate'], 0, ',', '.') }})
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             @endif
 
             <!-- Target URL -->
             <div>
                 <label for="target_url" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-                    URL Artikel Blog yang Dikomentari <span class="text-rose-500">*</span>
+                    <span x-show="taskType === 'comment' || taskType === 'comment_high_dr'">URL Artikel Blog yang Dikomentari</span>
+                    <span x-show="taskType === 'guestpost'">URL Blog / Website Tempat Guestpost</span>
+                    <span x-show="taskType === 'social_media'">URL Halaman / Profil Platform Sosial Media</span>
+                    <span x-show="taskType === 'internal_article'">URL Website Internal / PBN Perusahaan</span>
+                    <span class="text-rose-500">*</span>
                 </label>
                 <input type="url" name="target_url" id="target_url" x-model="targetUrl" @input.debounce.500ms="validateDomain()"
                     value="{{ old('target_url', isset($target) ? $target->url : request('prefill')) }}" {{ isset($target) ? 'readonly' : '' }} required
                     class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm transition {{ isset($target) ? 'bg-slate-50 font-mono text-slate-700' : '' }}"
                     placeholder="https://contoh-blog.co.id/artikel/belajar-seo">
                 <span class="text-[11px] text-slate-400 mt-1 block">
-                    {{ isset($target) ? 'URL otomatis terkunci dari antrean target pengerjaan.' : 'Masukkan alamat lengkap halaman website/artikel tempat Anda menaruh komentar.' }}
+                    {{ isset($target) ? 'URL otomatis terkunci dari antrean target pengerjaan.' : 'Masukkan alamat website tempat tugas ini dikerjakan.' }}
                 </span>
 
-                <!-- Realtime Domain Status Feedback -->
-                <div x-show="domainFeedback" x-cloak class="mt-2 text-xs font-medium px-3 py-2 rounded-lg transition"
+                <!-- Realtime Domain Status Feedback (Hanya untuk non-medsos) -->
+                <div x-show="domainFeedback && taskType !== 'social_media'" x-cloak class="mt-2 text-xs font-medium px-3 py-2 rounded-lg transition"
                     :class="domainCanSubmit ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'">
                     <span x-text="domainFeedback"></span>
                 </div>
             </div>
 
-            <!-- Comment Type -->
-            <div>
+            <!-- Dynamic Field: Output Published URL for Guestpost, Social Media, Internal Article -->
+            <div x-show="taskType === 'guestpost' || taskType === 'social_media' || taskType === 'internal_article'" x-cloak>
+                <label for="published_url" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                    <span x-show="taskType === 'guestpost'">🔗 URL Postingan Artikel yang Terbit (Live)</span>
+                    <span x-show="taskType === 'social_media'">🔗 URL Link Postingan Medsos yang Live</span>
+                    <span x-show="taskType === 'internal_article'">🔗 URL Artikel Internal yang Sudah Terbit</span>
+                    <span class="text-rose-500">*</span>
+                </label>
+                <input
+                    type="url"
+                    name="published_url"
+                    id="published_url"
+                    value="{{ old('published_url') }}"
+                    placeholder="https://website-luar.com/postingan-anda/"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                >
+                <span class="text-[11px] text-slate-400 mt-1 block">Link langsung ke postingan/artikel hasil pengerjaan Anda agar admin bisa memverifikasi.</span>
+            </div>
+
+            <!-- Dynamic Field: Platform for Social Media -->
+            <div x-show="taskType === 'social_media'" x-cloak>
+                <label for="platform" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Platform Sosial Media <span class="text-rose-500">*</span>
+                </label>
+                <select name="platform" id="platform" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm bg-white">
+                    <option value="">Pilih Platform...</option>
+                    <option value="Facebook" {{ old('platform') === 'Facebook' ? 'selected' : '' }}>Facebook (Post / Grup / Halaman)</option>
+                    <option value="X (Twitter)" {{ old('platform') === 'X (Twitter)' ? 'selected' : '' }}>X (Twitter)</option>
+                    <option value="LinkedIn" {{ old('platform') === 'LinkedIn' ? 'selected' : '' }}>LinkedIn (Post / Article)</option>
+                    <option value="Instagram" {{ old('platform') === 'Instagram' ? 'selected' : '' }}>Instagram</option>
+                    <option value="Threads" {{ old('platform') === 'Threads' ? 'selected' : '' }}>Threads</option>
+                    <option value="Pinterest" {{ old('platform') === 'Pinterest' ? 'selected' : '' }}>Pinterest</option>
+                    <option value="Medium" {{ old('platform') === 'Medium' ? 'selected' : '' }}>Medium</option>
+                    <option value="Lainnya" {{ old('platform') === 'Lainnya' ? 'selected' : '' }}>Lainnya</option>
+                </select>
+            </div>
+
+            <!-- Dynamic Field: Domain Rating for Comment High DR -->
+            <div x-show="taskType === 'comment_high_dr'" x-cloak>
+                <label for="domain_rating" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                    Domain Rating (DR) Website Target <span class="text-rose-500">*</span>
+                </label>
+                <input
+                    type="number"
+                    min="40"
+                    max="100"
+                    name="domain_rating"
+                    id="domain_rating"
+                    value="{{ old('domain_rating', 40) }}"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold"
+                    placeholder="Contoh: 45"
+                >
+                <span class="text-[11px] text-slate-400 mt-1 block">Khusus kategori ini, website target harus memiliki DR minimal 40.</span>
+            </div>
+
+            <!-- Client Backlink URL & Keyword Input -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="client_url" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                        URL Target Backlink Klien
+                    </label>
+                    <input
+                        type="url"
+                        name="client_url"
+                        id="client_url"
+                        value="{{ old('client_url', isset($target) ? $target->client_url : ($assignment ? $assignment->target_backlink_url : '')) }}"
+                        placeholder="https://klien-kami.com/layanan"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    >
+                    <span class="text-[11px] text-slate-400 mt-1 block">Link web klien yang Anda pasang di komentar / artikel / medsos.</span>
+                </div>
+                <div>
+                    <label for="keyword" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                        Anchor Text / Keyword Target
+                    </label>
+                    <input
+                        type="text"
+                        name="keyword"
+                        id="keyword"
+                        value="{{ old('keyword', isset($target) ? $target->keyword : ($assignment ? $assignment->target_keywords : '')) }}"
+                        placeholder="Contoh: Jasa SEO Profesional"
+                        class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                    >
+                    <span class="text-[11px] text-slate-400 mt-1 block">Kata kunci yang Anda jadikan anchor link.</span>
+                </div>
+            </div>
+
+            <!-- Comment Type (Khusus komentar & komentar high DR) -->
+            <div x-show="taskType === 'comment' || taskType === 'comment_high_dr'">
                 <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-2">
                     Status Tayang Komentar <span class="text-rose-500">*</span>
                 </label>
@@ -179,9 +302,14 @@
 
             <!-- Submit Button -->
             <div class="pt-2">
-                <button type="submit" :disabled="isSubmitting || (domainFeedback && !domainCanSubmit)"
+                <button type="submit" :disabled="isSubmitting || (taskType !== 'social_media' && domainFeedback && !domainCanSubmit)"
                     class="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-md shadow-emerald-100 hover:shadow-lg transition disabled:opacity-50 cursor-pointer flex items-center justify-center gap-2">
-                    <span x-show="!isSubmitting">Kirim Bukti Komentar Sekarang</span>
+                    <span x-show="!isSubmitting">
+                        <span x-show="taskType === 'comment' || taskType === 'comment_high_dr'">Kirim Bukti Komentar Sekarang</span>
+                        <span x-show="taskType === 'guestpost'">Kirim Laporan Guestpost Sekarang</span>
+                        <span x-show="taskType === 'social_media'">Kirim Bukti Postingan Medsos Sekarang</span>
+                        <span x-show="taskType === 'internal_article'">Kirim Bukti Post Artikel Sekarang</span>
+                    </span>
                     <span x-show="isSubmitting" x-cloak class="flex items-center gap-2">
                         <svg class="animate-spin w-4 h-4 text-white" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                         Mengompres & Mengirim...
@@ -197,6 +325,7 @@
 <script>
 function screenshotUploader() {
     return {
+        taskType: '{{ old('task_type', isset($target) ? ($target->task_type ?? 'comment') : 'comment') }}',
         targetUrl: '{{ old('target_url', isset($target) ? $target->url : request('prefill')) }}',
         hasImage: false,
         imagePreviewUrl: null,
@@ -318,10 +447,19 @@ function screenshotUploader() {
                 e.preventDefault();
                 return;
             }
-            if (this.domainFeedback && !this.domainCanSubmit) {
+            if (this.taskType !== 'social_media' && this.domainFeedback && !this.domainCanSubmit) {
                 alert('Domain ini sudah mencapai batas kuota 5 URL. Silakan cari website lain.');
                 e.preventDefault();
                 return;
+            }
+            if (['guestpost', 'social_media', 'internal_article'].includes(this.taskType)) {
+                const pubUrl = document.getElementById('published_url');
+                if (pubUrl && !pubUrl.value.trim()) {
+                    alert('Silakan masukkan URL postingan/artikel yang terbit.');
+                    pubUrl.focus();
+                    e.preventDefault();
+                    return;
+                }
             }
             this.isSubmitting = true;
         }

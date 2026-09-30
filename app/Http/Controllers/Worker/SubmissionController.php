@@ -10,6 +10,7 @@ use App\Models\TargetUrl;
 use App\Services\DomainService;
 use App\Services\ImageUploadService;
 use App\Services\PeriodService;
+use App\Services\TaskTypeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -93,12 +94,15 @@ class SubmissionController extends Controller
             $target = TargetUrl::with('domain')->find($request->input('target_id'));
         }
 
+        $taskTypes = TaskTypeService::all();
+
         return view('worker.submissions.create', [
             'user' => $user,
             'assignment' => $assignment,
             'activePeriod' => $activePeriod,
             'isDisqualified' => $isDisqualified,
             'target' => $target,
+            'taskTypes' => $taskTypes,
         ]);
     }
 
@@ -111,7 +115,13 @@ class SubmissionController extends Controller
 
         $request->validate([
             'target_url' => ['required', 'string', 'url'],
-            'comment_type' => ['required', 'in:approved_live,pending_moderation'],
+            'task_type' => ['nullable', 'string'],
+            'client_url' => ['nullable', 'string'],
+            'keyword' => ['nullable', 'string', 'max:255'],
+            'published_url' => ['nullable', 'string'],
+            'platform' => ['nullable', 'string', 'max:50'],
+            'domain_rating' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'comment_type' => ['nullable', 'in:approved_live,pending_moderation'],
             'screenshot_file' => ['nullable', 'image', 'max:5120'], // Max 5MB file upload
             'screenshot_base64' => ['nullable', 'string'], // From Ctrl+V paste
             'target_id' => ['nullable', 'integer', 'exists:target_urls,id'],
@@ -132,26 +142,51 @@ class SubmissionController extends Controller
 
             $screenshotPath = $imageUploadService->storeScreenshot($imageInput);
 
-            // Record submission with domain lock protection
+            $target = null;
+            $rewardAmount = null;
+            $taskType = $request->input('task_type', TaskTypeService::COMMENT);
+
+            if ($request->filled('target_id')) {
+                $target = TargetUrl::find($request->input('target_id'));
+                if ($target) {
+                    $taskType = $target->task_type ?? $taskType;
+                    $rewardAmount = $target->getEffectiveRate();
+                }
+            }
+
+            if (! $rewardAmount) {
+                if ($taskType === TaskTypeService::COMMENT && $user->default_rate !== null && (float) $user->default_rate > 0) {
+                    $rewardAmount = (float) $user->default_rate;
+                } else {
+                    $rewardAmount = TaskTypeService::getRate($taskType);
+                }
+            }
+
+            // Record submission with domain lock protection & multi-task data
             $submission = $domainService->recordSubmission(
                 $user,
                 $request->input('target_url'),
                 $screenshotPath,
-                $request->input('comment_type')
+                $request->input('comment_type', 'approved_live'),
+                $taskType,
+                $request->input('client_url', $target?->client_url),
+                $request->input('keyword', $target?->keyword),
+                $request->input('published_url'),
+                $request->input('platform'),
+                $rewardAmount,
+                $request->input('domain_rating'),
+                $target?->id
             );
 
             // If this came from a target task, link and complete it
-            if ($request->filled('target_id')) {
-                $target = TargetUrl::find($request->input('target_id'));
-                if ($target) {
-                    $target->markCompleted($submission);
-                    $submission->update(['target_url_id' => $target->id]);
-                }
+            if ($target) {
+                $target->markCompleted($submission);
+                $submission->update(['target_url_id' => $target->id]);
             }
 
             return redirect()
                 ->route('blogwalker.submissions.index')
-                ->with('success', "Bukti komentar di domain [{$submission->domain->root_domain}] berhasil dikirim! Menunggu verifikasi admin.");
+                ->with('success', 'Laporan tugas ['.TaskTypeService::getName($taskType)."] di domain [{$submission->domain->root_domain}] berhasil dikirim! Menunggu verifikasi admin.");
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {

@@ -25,15 +25,35 @@ class DomainController extends Controller
         }
 
         if ($search) {
-            $query->where('root_domain', 'like', "%{$search}%");
+            $query->where(function ($q) use ($search) {
+                $q->where('root_domain', 'like', "%{$search}%")
+                    ->orWhere('ip_address', 'like', "%{$search}%")
+                    ->orWhere('ip_subnet', 'like', "%{$search}%");
+            });
         }
 
         $domains = $query->orderByDesc('url_count')->paginate(20)->withQueryString();
+
+        // Detect subnets shared by multiple domains
+        $duplicateSubnets = Domain::whereNotNull('ip_subnet')
+            ->select('ip_subnet')
+            ->groupBy('ip_subnet')
+            ->havingRaw('count(*) > 1')
+            ->pluck('ip_subnet')
+            ->toArray();
+
+        $stats = [
+            'total_domains' => Domain::count(),
+            'unique_subnets' => Domain::whereNotNull('ip_subnet')->distinct('ip_subnet')->count('ip_subnet'),
+            'cluster_subnets' => count($duplicateSubnets),
+        ];
 
         return view('admin.domains.index', [
             'domains' => $domains,
             'currentStatus' => $status,
             'search' => $search,
+            'duplicateSubnets' => $duplicateSubnets,
+            'stats' => $stats,
         ]);
     }
 
@@ -70,5 +90,27 @@ class DomainController extends Controller
         }
 
         return back()->with('success', count($domains).' domain berhasil di-reset kuotanya menjadi 0.');
+    }
+
+    /**
+     * Resolve and update IP and Subnet for all domains that haven't been resolved yet.
+     */
+    public function refreshSubnets(DomainService $domainService): RedirectResponse
+    {
+        $domains = Domain::whereNull('ip_subnet')->orWhere('ip_subnet', '')->get();
+        $updated = 0;
+
+        foreach ($domains as $domain) {
+            $ipData = $domainService->resolveIpAndSubnet($domain->root_domain);
+            if (! empty($ipData['subnet'])) {
+                $domain->update([
+                    'ip_address' => $ipData['ip'],
+                    'ip_subnet' => $ipData['subnet'],
+                ]);
+                $updated++;
+            }
+        }
+
+        return back()->with('success', "Berhasil mendeteksi dan memperbarui IP Subnet untuk {$updated} domain.");
     }
 }

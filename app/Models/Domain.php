@@ -14,6 +14,8 @@ class Domain extends Model
     protected $fillable = [
         'root_domain',
         'tld',
+        'ip_address',
+        'ip_subnet',
         'url_count',
         'max_limit',
         'is_locked',

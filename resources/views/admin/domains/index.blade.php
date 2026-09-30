@@ -17,21 +17,53 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900">Master Domain & Pembatasan 5 URL</h1>
-            <p class="text-sm text-slate-500 mt-1">Pantau kuota komentar tiap domain. Domain yang mencapai 5 URL otomatis dikunci hingga Anda reset.</p>
+            <h1 class="text-2xl font-bold text-slate-900">Master Domain & Deteksi IP Subnet</h1>
+            <p class="text-sm text-slate-500 mt-1">Pantau kuota 5 URL per domain dan deteksi C-Class Subnet IP untuk mencegah risiko footprint PBN / cluster Google penalty.</p>
         </div>
 
-        <!-- Bulk Reset Form -->
-        <form method="POST" action="{{ route('admin.domains.bulk-reset') }}" x-show="selectedIds.length > 0" x-cloak
-            onsubmit="return confirm('Apakah Anda yakin ingin me-reset kuota seluruh domain terpilih kembali ke 0?')">
-            @csrf
-            <template x-for="id in selectedIds" :key="id">
-                <input type="hidden" name="domain_ids[]" :value="id">
-            </template>
-            <button type="submit" class="px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-2 cursor-pointer">
-                <span>🔄 Reset Kuota Terpilih (<span x-text="selectedIds.length"></span>)</span>
-            </button>
-        </form>
+        <div class="flex flex-wrap items-center gap-2">
+            <!-- Refresh DNS & Subnet Button -->
+            <form method="POST" action="{{ route('admin.domains.refresh-subnets') }}">
+                @csrf
+                <button type="submit" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition border border-slate-200 cursor-pointer" title="Resolve DNS IP & Subnet C-Class untuk domain yang belum terdeteksi">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                    <span>Deteksi Ulang IP / Subnet</span>
+                </button>
+            </form>
+
+            <!-- Bulk Reset Form -->
+            <form method="POST" action="{{ route('admin.domains.bulk-reset') }}" x-show="selectedIds.length > 0" x-cloak
+                onsubmit="return confirm('Apakah Anda yakin ingin me-reset kuota seluruh domain terpilih kembali ke 0?')">
+                @csrf
+                <template x-for="id in selectedIds" :key="id">
+                    <input type="hidden" name="domain_ids[]" :value="id">
+                </template>
+                <button type="submit" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-2 cursor-pointer">
+                    <span>🔄 Reset Kuota Terpilih (<span x-text="selectedIds.length"></span>)</span>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Bar -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
+            <div class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Domain</div>
+            <div class="text-2xl font-bold text-slate-900 mt-1">{{ number_format($totalDomains ?? $domains->total()) }}</div>
+        </div>
+        <div class="p-4 bg-rose-50 rounded-xl border border-rose-200 shadow-xs">
+            <div class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Penuh / Terkunci (5/5)</div>
+            <div class="text-2xl font-bold text-rose-800 mt-1">{{ number_format($lockedDomains ?? 0) }}</div>
+        </div>
+        <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200 shadow-xs">
+            <div class="text-xs font-semibold text-emerald-700 uppercase tracking-wider">Subnet IP Terdeteksi</div>
+            <div class="text-2xl font-bold text-emerald-800 mt-1">{{ number_format($detectedSubnetsCount ?? 0) }}</div>
+        </div>
+        <div class="p-4 bg-amber-50 rounded-xl border border-amber-200 shadow-xs">
+            <div class="text-xs font-semibold text-amber-700 uppercase tracking-wider">Cluster Subnet Kembar</div>
+            <div class="text-2xl font-bold text-amber-800 mt-1">{{ number_format($clusterSubnetsCount ?? 0) }}</div>
+            <div class="text-[10px] text-amber-600 mt-0.5">Potensi server/PBN sama</div>
+        </div>
     </div>
 
     <!-- Filter & Search -->
@@ -53,7 +85,7 @@
 
         <form method="GET" action="{{ route('admin.domains.index') }}" class="flex gap-2">
             <input type="hidden" name="status" value="{{ $currentStatus }}">
-            <input type="text" name="search" value="{{ $search }}" placeholder="Cari nama domain..."
+            <input type="text" name="search" value="{{ $search }}" placeholder="Cari domain, IP, atau subnet..."
                 class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none w-56">
             <button type="submit" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs cursor-pointer">
                 Cari
@@ -71,6 +103,7 @@
                             <input type="checkbox" @change="toggleAll($event)" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
                         </th>
                         <th class="px-6 py-3.5">Nama Root Domain</th>
+                        <th class="px-6 py-3.5">IP Address & Subnet C-Class</th>
                         <th class="px-6 py-3.5">Ekstensi (TLD)</th>
                         <th class="px-6 py-3.5">Penggunaan Kuota (URL)</th>
                         <th class="px-6 py-3.5">Status</th>
@@ -88,6 +121,23 @@
                             <a href="{{ route('admin.domains.show', $domain) }}" class="font-bold text-slate-900 hover:text-emerald-600 transition block text-sm">
                                 {{ $domain->root_domain }} &rarr;
                             </a>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            @if($domain->ip_address)
+                                <div class="font-mono text-xs font-semibold text-slate-800">{{ $domain->ip_address }}</div>
+                                <div class="mt-1 flex items-center gap-1.5">
+                                    <span class="font-mono text-[11px] px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium">
+                                        {{ $domain->ip_subnet ?? '-' }}
+                                    </span>
+                                    @if($domain->ip_subnet && in_array($domain->ip_subnet, $duplicateSubnets ?? []))
+                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800" title="Subnet C-Class ini digunakan oleh lebih dari 1 domain di sistem (potensi 1 server/PBN)">
+                                            ⚠️ Cluster
+                                        </span>
+                                    @endif
+                                </div>
+                            @else
+                                <span class="text-xs text-slate-400 italic">Belum terdeteksi</span>
+                            @endif
                         </td>
                         <td class="px-6 py-4">
                             <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono text-xs font-semibold">
@@ -131,7 +181,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-12 text-center text-xs text-slate-400">
+                        <td colspan="8" class="px-6 py-12 text-center text-xs text-slate-400">
                             Belum ada domain yang tersimpan di sistem.
                         </td>
                     </tr>

@@ -3,16 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\TaskTypeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
-use Symfony\Component\HttpFoundation\StreamedResponse;
-use ZipArchive;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use ZipArchive;
 
 class SystemMaintenanceController extends Controller
 {
@@ -51,6 +51,7 @@ class SystemMaintenanceController extends Controller
         }
 
         $zipSupported = class_exists(ZipArchive::class);
+        $taskTypes = TaskTypeService::all();
 
         return view('admin.system.index', [
             'serverInfo' => $serverInfo,
@@ -61,6 +62,7 @@ class SystemMaintenanceController extends Controller
             'appUrl' => config('app.url', url('/')),
             'appName' => config('app.name', 'Blogwalker Pro'),
             'zipSupported' => $zipSupported,
+            'taskTypes' => $taskTypes,
         ]);
     }
 
@@ -141,7 +143,7 @@ class SystemMaintenanceController extends Controller
             $tempZipPath = storage_path('app/backup_full_'.uniqid().'.zip');
             $tempSqlPath = storage_path('app/backup_temp_sql_'.uniqid().'.sql');
 
-            $zip = new ZipArchive();
+            $zip = new ZipArchive;
             if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
                 return back()->with('error', 'Gagal membuat file arsip ZIP cadangan.');
             }
@@ -213,7 +215,7 @@ class SystemMaintenanceController extends Controller
                     return back()->with('error', 'Ekstensi PHP ZipArchive tidak aktif pada server hosting ini.');
                 }
 
-                $zip = new ZipArchive();
+                $zip = new ZipArchive;
                 if ($zip->open($uploadedFile->getRealPath()) !== true) {
                     return back()->with('error', 'Gagal membuka file arsip ZIP cadangan.');
                 }
@@ -296,7 +298,7 @@ class SystemMaintenanceController extends Controller
 
         fwrite($handle, "-- =====================================================\n");
         fwrite($handle, "-- Blogwalker Pro Database Backup\n");
-        fwrite($handle, "-- Waktu Backup: ".date('Y-m-d H:i:s')."\n");
+        fwrite($handle, '-- Waktu Backup: '.date('Y-m-d H:i:s')."\n");
         fwrite($handle, "-- Tipe Driver : {$dbDriver}\n");
         fwrite($handle, "-- =====================================================\n\n");
 
@@ -478,5 +480,29 @@ class SystemMaintenanceController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('install.index')->with('info', 'Kunci instalasi telah dibuka. Silakan masukkan data database MySQL Anda.');
+    }
+
+    /**
+     * Update default reward rates for the 5 task categories.
+     */
+    public function updateRates(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'rate_comment' => 'required|numeric|min:0',
+            'rate_guestpost' => 'required|numeric|min:0',
+            'rate_social_media' => 'required|numeric|min:0',
+            'rate_comment_high_dr' => 'required|numeric|min:0',
+            'rate_internal_article' => 'required|numeric|min:0',
+        ]);
+
+        TaskTypeService::updateDefaultRates([
+            'comment' => $validated['rate_comment'],
+            'guestpost' => $validated['rate_guestpost'],
+            'social_media' => $validated['rate_social_media'],
+            'comment_high_dr' => $validated['rate_comment_high_dr'],
+            'internal_article' => $validated['rate_internal_article'],
+        ]);
+
+        return back()->with('success', 'Master tarif default untuk 5 kategori tugas berhasil diperbarui!');
     }
 }

@@ -72,15 +72,22 @@
         <!-- Filter by Worker & Search -->
         <form method="GET" action="{{ route('admin.reviews.index') }}" class="flex flex-wrap items-center gap-2">
             <input type="hidden" name="status" value="{{ $currentStatus }}">
+
+            <select name="task_type" onchange="this.form.submit()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                <option value="">-- Semua Kategori Misi --</option>
+                @foreach($taskTypes as $k => $t)
+                    <option value="{{ $k }}" {{ ($currentTaskType ?? '') === $k ? 'selected' : '' }}>{{ $t['label'] }}</option>
+                @endforeach
+            </select>
             
-            <select name="worker_id" onchange="this.form.submit()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+            <select name="worker_id" onchange="this.form.submit()" class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
                 <option value="">-- Semua Blogwalker --</option>
                 @foreach($workers as $w)
                     <option value="{{ $w->id }}" {{ $currentWorkerId == $w->id ? 'selected' : '' }}>{{ $w->name }}</option>
                 @endforeach
             </select>
 
-            <input type="text" name="search" value="{{ $search }}" placeholder="Cari domain atau URL..."
+            <input type="text" name="search" value="{{ $search }}" placeholder="Cari domain, URL, keyword..."
                 class="px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 focus:outline-none w-48">
             <button type="submit" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs">
                 Cari
@@ -98,8 +105,8 @@
                             <input type="checkbox" @change="toggleAll($event)" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
                         </th>
                         <th class="px-4 py-3.5">Screenshot</th>
-                        <th class="px-6 py-3.5">Worker</th>
-                        <th class="px-6 py-3.5">Domain & URL Target</th>
+                        <th class="px-6 py-3.5">Worker & Misi</th>
+                        <th class="px-6 py-3.5">Detail Tugas & Bukti</th>
                         <th class="px-6 py-3.5">Tanggal</th>
                         <th class="px-6 py-3.5">Status</th>
                         <th class="px-6 py-3.5 text-right">Aksi</th>
@@ -107,6 +114,9 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($submissions as $sub)
+                    @php
+                        $subTask = $taskTypes[$sub->task_type ?? 'comment'] ?? $taskTypes['comment'];
+                    @endphp
                     <tr class="hover:bg-slate-50/60 transition">
                         <td class="px-4 py-4 text-center">
                             <input type="checkbox" value="{{ $sub->id }}" x-model="selectedIds" class="submission-checkbox rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
@@ -122,13 +132,43 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="font-bold text-slate-800 text-xs block">{{ $sub->user->name }}</span>
-                            <span class="text-[11px] text-slate-400">Rp {{ number_format($sub->rate_amount, 0, ',', '.') }}</span>
+                            <div class="flex items-center gap-1.5 mt-1">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold {{ $subTask['badge'] }}">
+                                    {{ $subTask['label'] }}
+                                </span>
+                            </div>
+                            <span class="text-xs font-bold text-emerald-700 mt-1 block">Rp {{ number_format($sub->rate_amount, 0, ',', '.') }}</span>
                         </td>
-                        <td class="px-6 py-4">
-                            <span class="font-bold text-slate-900 block text-xs">{{ $sub->domain->root_domain }}</span>
-                            <a href="{{ $sub->target_url }}" target="_blank" class="text-xs text-emerald-600 hover:underline truncate max-w-xs block font-mono">
-                                {{ $sub->target_url }}
+                        <td class="px-6 py-4 max-w-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="font-bold text-slate-900 text-xs">{{ $sub->domain->root_domain }}</span>
+                                @if($sub->platform)
+                                    <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-semibold">{{ $sub->platform }}</span>
+                                @endif
+                                @if($sub->domain_rating)
+                                    <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold">DR {{ $sub->domain_rating }}</span>
+                                @endif
+                            </div>
+                            <a href="{{ $sub->target_url }}" target="_blank" class="text-xs text-slate-500 hover:text-emerald-600 hover:underline truncate block font-mono mt-0.5" title="{{ $sub->target_url }}">
+                                Target: {{ $sub->target_url }}
                             </a>
+                            @if($sub->published_url)
+                                <div class="mt-1 text-xs">
+                                    <a href="{{ $sub->published_url }}" target="_blank" class="text-emerald-700 font-bold hover:underline flex items-center gap-1 truncate" title="{{ $sub->published_url }}">
+                                        <span>🔗 Hasil Post: {{ $sub->published_url }}</span>
+                                    </a>
+                                </div>
+                            @endif
+                            @if($sub->client_url || $sub->keyword)
+                                <div class="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500">
+                                    @if($sub->keyword)
+                                        <span class="bg-slate-100 px-1.5 py-0.5 rounded text-slate-700 font-medium">Anchor: {{ $sub->keyword }}</span>
+                                    @endif
+                                    @if($sub->client_url)
+                                        <a href="{{ $sub->client_url }}" target="_blank" class="text-blue-600 hover:underline truncate max-w-[150px]">Klien: {{ $sub->client_url }}</a>
+                                    @endif
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-xs text-slate-500 whitespace-nowrap">
                             {{ $sub->created_at->format('d M Y, H:i') }}

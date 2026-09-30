@@ -17,7 +17,13 @@ class Submission extends Model
         'user_id',
         'domain_id',
         'target_url_id',
+        'task_type',
         'target_url',
+        'client_url',
+        'keyword',
+        'published_url',
+        'platform',
+        'domain_rating',
         'screenshot_path',
         'comment_type',
         'review_status',
@@ -34,6 +40,7 @@ class Submission extends Model
     {
         return [
             'rate_amount' => 'decimal:2',
+            'domain_rating' => 'integer',
             'is_paid' => 'boolean',
             'paid_at' => 'datetime',
             'reviewed_at' => 'datetime',

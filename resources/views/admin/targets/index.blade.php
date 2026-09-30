@@ -52,9 +52,17 @@
 
     <!-- Filter & Search -->
     <div class="p-4 bg-white rounded-xl border border-slate-200 shadow-xs">
-        <form method="GET" action="{{ route('admin.targets.index') }}" class="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <form method="GET" action="{{ route('admin.targets.index') }}" class="grid grid-cols-1 md:grid-cols-5 gap-3">
             <div class="md:col-span-2">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari URL, domain, atau keyword..." class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari URL, domain, keyword, atau klien..." class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+            </div>
+            <div>
+                <select name="task_type" class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <option value="">Semua Kategori Misi</option>
+                    @foreach($taskTypes as $key => $type)
+                        <option value="{{ $key }}" {{ request('task_type') === $key ? 'selected' : '' }}>{{ $type['label'] }}</option>
+                    @endforeach
+                </select>
             </div>
             <div>
                 <select name="status" class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
@@ -70,7 +78,7 @@
                 <button type="submit" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-sm font-semibold transition">
                     Filter
                 </button>
-                @if(request()->hasAny(['search', 'status']))
+                @if(request()->hasAny(['search', 'task_type', 'status']))
                     <a href="{{ route('admin.targets.index') }}" class="text-xs text-slate-500 hover:text-slate-800 underline">Reset</a>
                 @endif
             </div>
@@ -83,7 +91,8 @@
             <table class="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <th class="py-3 px-4">URL Target</th>
+                        <th class="py-3 px-4">URL Target & Klien</th>
+                        <th class="py-3 px-4">Kategori & Tarif</th>
                         <th class="py-3 px-4">Root Domain & Kuota</th>
                         <th class="py-3 px-4">Keyword / Catatan</th>
                         <th class="py-3 px-4">Status</th>
@@ -93,13 +102,34 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($targets as $target)
+                        @php
+                            $taskInfo = $taskTypes[$target->task_type ?? 'comment'] ?? $taskTypes['comment'];
+                            $effectiveRate = $target->getEffectiveRate();
+                        @endphp
                         <tr class="hover:bg-slate-50/70 transition">
-                            <td class="py-3 px-4 max-w-xs truncate">
-                                <a href="{{ $target->url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-emerald-700 hover:text-emerald-900 underline flex items-center gap-1.5" title="{{ $target->url }}">
+                            <td class="py-3 px-4 max-w-xs">
+                                <a href="{{ $target->url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-emerald-700 hover:text-emerald-900 underline flex items-center gap-1.5 truncate" title="{{ $target->url }}">
                                     <span class="truncate">{{ $target->url }}</span>
                                     <svg class="w-3.5 h-3.5 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                                 </a>
-                                <div class="text-[11px] text-slate-400 mt-0.5">Dibuat: {{ $target->created_at->format('d M Y, H:i') }}</div>
+                                @if($target->client_url)
+                                    <div class="text-[11px] text-blue-600 truncate mt-0.5 flex items-center gap-1" title="Backlink Klien: {{ $target->client_url }}">
+                                        <span class="font-semibold text-slate-500">Klien:</span>
+                                        <a href="{{ $target->client_url }}" target="_blank" class="hover:underline truncate">{{ $target->client_url }}</a>
+                                    </div>
+                                @endif
+                                <div class="text-[10px] text-slate-400 mt-0.5">Dibuat: {{ $target->created_at->format('d M Y, H:i') }}</div>
+                            </td>
+                            <td class="py-3 px-4 whitespace-nowrap">
+                                <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold {{ $taskInfo['badge'] }}">
+                                    {{ $taskInfo['label'] }}
+                                </span>
+                                <div class="font-bold text-slate-900 text-xs mt-1">
+                                    Rp {{ number_format($effectiveRate, 0, ',', '.') }}
+                                    @if($target->reward_amount)
+                                        <span class="text-[10px] text-emerald-600 font-normal font-mono">(Khusus)</span>
+                                    @endif
+                                </div>
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap">
                                 <div class="font-semibold text-slate-800">{{ $target->root_domain }}</div>
@@ -169,7 +199,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="py-12 text-center text-slate-500">
+                            <td colspan="7" class="py-12 text-center text-slate-500">
                                 <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                 <p class="font-medium text-slate-700">Belum ada target URL di dalam antrean.</p>
                                 <p class="text-xs text-slate-400 mt-1">Gunakan tombol "+ Input Target Massal" untuk memasukkan daftar website yang ingin dikomentari.</p>

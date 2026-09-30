@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\TaskTypeService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -12,9 +13,12 @@ class TargetUrl extends Model
 
     protected $fillable = [
         'url',
+        'task_type',
+        'client_url',
         'domain_id',
         'root_domain',
         'keyword',
+        'reward_amount',
         'notes',
         'status',
         'taken_by_user_id',
@@ -27,7 +31,20 @@ class TargetUrl extends Model
     {
         return [
             'taken_at' => 'datetime',
+            'reward_amount' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Get effective reward rate for this target.
+     */
+    public function getEffectiveRate(): float
+    {
+        if ($this->reward_amount !== null && (float) $this->reward_amount > 0) {
+            return (float) $this->reward_amount;
+        }
+
+        return TaskTypeService::getRate($this->task_type ?? 'comment');
     }
 
     public function domain(): BelongsTo

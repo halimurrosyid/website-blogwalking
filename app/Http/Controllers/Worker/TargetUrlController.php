@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Worker;
 
 use App\Http\Controllers\Controller;
 use App\Models\TargetUrl;
+use App\Services\TaskTypeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -26,16 +27,22 @@ class TargetUrlController extends Controller
             ->available()
             ->latest();
 
+        if ($request->filled('task_type')) {
+            $query->where('task_type', $request->task_type);
+        }
+
         if ($request->filled('search')) {
             $search = trim($request->search);
             $query->where(function ($q) use ($search) {
                 $q->where('url', 'like', "%{$search}%")
                     ->orWhere('root_domain', 'like', "%{$search}%")
-                    ->orWhere('keyword', 'like', "%{$search}%");
+                    ->orWhere('keyword', 'like', "%{$search}%")
+                    ->orWhere('client_url', 'like', "%{$search}%");
             });
         }
 
         $availableTargets = $query->paginate(20)->withQueryString();
+        $taskTypes = TaskTypeService::all();
 
         $stats = [
             'available_count' => TargetUrl::available()->count(),
@@ -46,7 +53,7 @@ class TargetUrlController extends Controller
                 ->count(),
         ];
 
-        return view('worker.targets.index', compact('availableTargets', 'myActiveTargets', 'stats'));
+        return view('worker.targets.index', compact('availableTargets', 'myActiveTargets', 'stats', 'taskTypes'));
     }
 
     public function claim(TargetUrl $target): RedirectResponse

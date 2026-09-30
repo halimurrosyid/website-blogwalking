@@ -38,15 +38,24 @@
         <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-5 shadow-xs">
             <div class="flex items-center gap-2 font-bold text-amber-900 text-base mb-3">
                 <svg class="w-5 h-5 text-amber-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Target yang Sedang Anda Kerjakan ({{ $myActiveTargets->count() }})
+                Misi yang Sedang Anda Kerjakan ({{ $myActiveTargets->count() }})
             </div>
 
             <div class="space-y-3">
                 @foreach($myActiveTargets as $myTarget)
+                    @php
+                        $targetTaskInfo = $taskTypes[$myTarget->task_type ?? 'comment'] ?? $taskTypes['comment'];
+                        $targetReward = $myTarget->getEffectiveRate();
+                    @endphp
                     <div class="bg-white p-4 rounded-lg border border-amber-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
-                        <div class="space-y-1 max-w-xl">
-                            <div class="flex items-center gap-2">
-                                <span class="px-2 py-0.5 bg-amber-100 text-amber-800 rounded text-xs font-semibold">Aktif</span>
+                        <div class="space-y-1.5 max-w-xl">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[11px] font-bold {{ $targetTaskInfo['badge'] }}">
+                                    {{ $targetTaskInfo['label'] }}
+                                </span>
+                                <span class="font-bold text-emerald-700 text-xs font-mono bg-emerald-50 px-2 py-0.5 rounded">
+                                    Reward: Rp {{ number_format($targetReward, 0, ',', '.') }}
+                                </span>
                                 <span class="text-xs font-mono font-medium text-slate-500">{{ $myTarget->root_domain }}</span>
                             </div>
                             <div class="font-medium text-sm text-slate-900 break-all">
@@ -55,9 +64,15 @@
                                     <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
                                 </a>
                             </div>
+                            @if($myTarget->client_url)
+                                <div class="text-xs text-blue-700 bg-blue-50/70 px-2.5 py-1 rounded border border-blue-100 flex items-center gap-1.5">
+                                    <span class="font-bold text-blue-900">🔗 Target Backlink:</span>
+                                    <a href="{{ $myTarget->client_url }}" target="_blank" rel="noopener noreferrer" class="underline truncate font-mono text-[11px]">{{ $myTarget->client_url }}</a>
+                                </div>
+                            @endif
                             @if($myTarget->keyword)
                                 <div class="text-xs text-slate-600">
-                                    Keyword Target: <strong class="text-slate-800">{{ $myTarget->keyword }}</strong>
+                                    Keyword / Anchor Target: <strong class="text-slate-800">{{ $myTarget->keyword }}</strong>
                                 </div>
                             @endif
                             @if($myTarget->notes)
@@ -68,7 +83,7 @@
                         <div class="flex items-center gap-2 shrink-0 w-full md:w-auto">
                             <a href="{{ route('blogwalker.submissions.create', ['target_id' => $myTarget->id]) }}" class="flex-1 md:flex-initial inline-flex justify-center items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                Upload Bukti Screenshot
+                                Kirim Laporan Selesai
                             </a>
                             <form method="POST" action="{{ route('blogwalker.targets.skip', $myTarget->id) }}" onsubmit="return confirm('Lewati target ini jika link mati atau form komentar ditutup?')">
                                 @csrf
@@ -85,11 +100,20 @@
 
     <!-- Available Targets Pool -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden">
-        <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <h2 class="font-bold text-slate-800 text-base">Daftar Target Siap Dikomentari</h2>
-            <form method="GET" action="{{ route('blogwalker.targets.index') }}" class="flex items-center gap-2 w-full sm:w-auto">
-                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari domain atau keyword..." class="text-xs border-slate-300 rounded-lg px-3 py-1.5 focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-64">
-                <button type="submit" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-medium">Cari</button>
+        <div class="p-4 border-b border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+            <h2 class="font-bold text-slate-800 text-base">Daftar Misi & Target Siap Dikerjakan</h2>
+            <form method="GET" action="{{ route('blogwalker.targets.index') }}" class="flex flex-wrap items-center gap-2 w-full md:w-auto">
+                <select name="task_type" class="text-xs border-slate-300 rounded-lg px-2.5 py-1.5 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                    <option value="">Semua Kategori Misi</option>
+                    @foreach($taskTypes as $key => $type)
+                        <option value="{{ $key }}" {{ request('task_type') === $key ? 'selected' : '' }}>{{ $type['label'] }}</option>
+                    @endforeach
+                </select>
+                <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari domain atau keyword..." class="text-xs border-slate-300 rounded-lg px-3 py-1.5 focus:ring-emerald-500 focus:border-emerald-500 w-full sm:w-48">
+                <button type="submit" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-medium">Filter</button>
+                @if(request()->hasAny(['search', 'task_type']))
+                    <a href="{{ route('blogwalker.targets.index') }}" class="text-xs text-slate-500 hover:text-slate-800 underline">Reset</a>
+                @endif
             </form>
         </div>
 
@@ -97,16 +121,26 @@
             <table class="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        <th class="py-3 px-4">URL Target</th>
+                        <th class="py-3 px-4">Misi & URL Target</th>
+                        <th class="py-3 px-4">Komisi / Reward</th>
                         <th class="py-3 px-4">Domain & Kuota</th>
-                        <th class="py-3 px-4">Keyword Rekomendasi</th>
+                        <th class="py-3 px-4">Keyword / Klien</th>
                         <th class="py-3 px-4 text-right">Aksi Cepat</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($availableTargets as $target)
+                        @php
+                            $targetTaskInfo = $taskTypes[$target->task_type ?? 'comment'] ?? $taskTypes['comment'];
+                            $targetReward = $target->getEffectiveRate();
+                        @endphp
                         <tr class="hover:bg-slate-50/70 transition">
-                            <td class="py-3.5 px-4 max-w-md">
+                            <td class="py-3.5 px-4 max-w-sm">
+                                <div class="flex items-center gap-1.5 mb-1">
+                                    <span class="inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider {{ $targetTaskInfo['badge'] }}">
+                                        {{ $targetTaskInfo['label'] }}
+                                    </span>
+                                </div>
                                 <div class="font-medium text-slate-800 line-clamp-1" title="{{ $target->url }}">
                                     {{ $target->url }}
                                 </div>
@@ -115,18 +149,29 @@
                                 @endif
                             </td>
                             <td class="py-3.5 px-4 whitespace-nowrap">
+                                <div class="font-bold text-slate-900 text-sm">
+                                    Rp {{ number_format($targetReward, 0, ',', '.') }}
+                                </div>
+                                <div class="text-[10px] text-emerald-600 font-semibold">per tugas lolos</div>
+                            </td>
+                            <td class="py-3.5 px-4 whitespace-nowrap">
                                 <span class="font-semibold text-slate-800">{{ $target->root_domain }}</span>
-                                @if($target->domain)
+                                @if($target->domain && $target->task_type !== 'social_media')
                                     <span class="ml-2 text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">
-                                        Slot sisa: {{ $target->domain->remainingSlots() }}
+                                        Slot: {{ $target->domain->remainingSlots() }}
                                     </span>
                                 @endif
                             </td>
-                            <td class="py-3.5 px-4 whitespace-nowrap text-xs">
+                            <td class="py-3.5 px-4 max-w-[200px] text-xs">
                                 @if($target->keyword)
-                                    <span class="px-2 py-1 bg-slate-100 text-slate-700 rounded font-medium">{{ $target->keyword }}</span>
+                                    <span class="inline-block px-2 py-0.5 bg-slate-100 text-slate-700 rounded font-medium">{{ $target->keyword }}</span>
                                 @else
                                     <span class="text-slate-400">Bebas / Sesuai Topik</span>
+                                @endif
+                                @if($target->client_url)
+                                    <div class="text-[11px] text-blue-600 truncate mt-1" title="Target Backlink: {{ $target->client_url }}">
+                                        🔗 {{ $target->client_url }}
+                                    </div>
                                 @endif
                             </td>
                             <td class="py-3.5 px-4 whitespace-nowrap text-right">
@@ -134,8 +179,8 @@
                                     <!-- Direct Claim & Execute Button -->
                                     <form method="POST" action="{{ route('blogwalker.targets.claim', $target->id) }}">
                                         @csrf
-                                        <button type="submit" onclick="window.open('{{ $target->url }}', '_blank');" class="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition">
-                                            <span>Komen Sekarang</span>
+                                        <button type="submit" onclick="window.open('{{ $target->url }}', '_blank');" class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition">
+                                            <span>Ambil & Kerjakan</span>
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
                                         </button>
                                     </form>
@@ -152,7 +197,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="py-12 text-center text-slate-500">
+                            <td colspan="5" class="py-12 text-center text-slate-500">
                                 <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 <p class="font-medium text-slate-700">Semua target URL saat ini sudah habis atau selesai dikerjakan!</p>
                                 <p class="text-xs text-slate-400 mt-1">Anda juga dapat mencari website secara mandiri lalu kirimkan via menu "+ Kirim Komentar".</p>

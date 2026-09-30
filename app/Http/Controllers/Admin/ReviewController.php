@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Submission;
 use App\Models\User;
+use App\Services\TaskTypeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -29,9 +30,16 @@ class ReviewController extends Controller
             $query->where('user_id', $workerId);
         }
 
+        if ($request->filled('task_type')) {
+            $query->where('task_type', $request->input('task_type'));
+        }
+
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('target_url', 'like', "%{$search}%")
+                    ->orWhere('published_url', 'like', "%{$search}%")
+                    ->orWhere('client_url', 'like', "%{$search}%")
+                    ->orWhere('keyword', 'like', "%{$search}%")
                     ->orWhereHas('domain', function ($sub) use ($search) {
                         $sub->where('root_domain', 'like', "%{$search}%");
                     });
@@ -40,10 +48,13 @@ class ReviewController extends Controller
 
         $submissions = $query->paginate(20)->withQueryString();
         $workers = User::whereIn('role', ['blogwalker', 'worker'])->orderBy('name')->get();
+        $taskTypes = TaskTypeService::all();
 
         return view('admin.reviews.index', [
             'submissions' => $submissions,
             'workers' => $workers,
+            'taskTypes' => $taskTypes,
+            'currentTaskType' => $request->input('task_type', ''),
             'currentStatus' => $status,
             'currentWorkerId' => $workerId,
             'search' => $search,

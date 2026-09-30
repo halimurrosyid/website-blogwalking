@@ -61,36 +61,131 @@ https://website-kuliner.com/resep-masakan-nusantara/"
                 <div class="text-[11px] text-slate-400 mt-1">Bisa memuat puluhan hingga ratusan URL sekaligus.</div>
             </div>
 
-            <!-- Target Keyword -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label for="keyword" class="block text-sm font-semibold text-slate-800 mb-1">
-                        Anchor Text / Keyword Target <span class="text-xs font-normal text-slate-400">(Opsional)</span>
-                    </label>
-                    <input
-                        type="text"
-                        id="keyword"
-                        name="keyword"
-                        value="{{ old('keyword') }}"
-                        placeholder="Contoh: Jasa Pembuatan Website"
-                        class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    >
-                    <div class="text-[11px] text-slate-400 mt-1">Kata kunci yang diarahkan kepada blogwalker untuk dipasang.</div>
+            <!-- Kategori Tugas / Misi -->
+            <div x-data="{
+                taskType: '{{ old('task_type', 'comment') }}',
+                rates: {
+                    comment: {{ $taskTypes['comment']['default_rate'] ?? 750 }},
+                    guestpost: {{ $taskTypes['guestpost']['default_rate'] ?? 2000 }},
+                    social_media: {{ $taskTypes['social_media']['default_rate'] ?? 1500 }},
+                    comment_high_dr: {{ $taskTypes['comment_high_dr']['default_rate'] ?? 1000 }},
+                    internal_article: {{ $taskTypes['internal_article']['default_rate'] ?? 10000 }}
+                },
+                rewardAmount: '{{ old('reward_amount', '') }}',
+                setPresetRate(amount) {
+                    this.rewardAmount = amount;
+                }
+            }" class="space-y-5">
+
+                <div class="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-4">
+                    <div>
+                        <label for="task_type" class="block text-sm font-bold text-slate-800 mb-1">
+                            🎯 Kategori Tugas / Misi <span class="text-rose-500">*</span>
+                        </label>
+                        <select
+                            id="task_type"
+                            name="task_type"
+                            x-model="taskType"
+                            @change="if (!rewardAmount) rewardAmount = rates[taskType]"
+                            class="w-full text-sm font-semibold border-slate-300 rounded-lg px-3 py-2.5 bg-white focus:ring-emerald-500 focus:border-emerald-500 text-slate-900"
+                        >
+                            @foreach($taskTypes as $key => $type)
+                                <option value="{{ $key }}" {{ old('task_type', 'comment') === $key ? 'selected' : '' }}>
+                                    {{ $type['label'] }} (Standar: Rp {{ number_format($type['default_rate'], 0, ',', '.') }})
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="mt-2 text-xs text-slate-600 bg-white p-2.5 rounded-lg border border-slate-200">
+                            <span class="font-semibold text-slate-800">Petunjuk Tugas:</span>
+                            <span x-show="taskType === 'comment'">Komentar bermutu di artikel target dengan mencantumkan link/anchor keyword.</span>
+                            <span x-show="taskType === 'guestpost'">Tulis & publikasikan artikel di blog eksternal dengan backlink ke URL target klien.</span>
+                            <span x-show="taskType === 'social_media'">Posting konten relevan di sosial media (FB, X, LinkedIn, dll) dengan keyword & link klien.</span>
+                            <span x-show="taskType === 'comment_high_dr'">Komentar di website otoritas tinggi (DR > 40). Pastikan domain memenuhi kriteria.</span>
+                            <span x-show="taskType === 'internal_article'">Posting artikel lengkap di jaringan blog internal/PBN perusahaan sesuai standar SEO.</span>
+                        </div>
+                    </div>
+
+                    <!-- Custom Reward Amount (Opsi A) -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label for="reward_amount" class="block text-sm font-bold text-slate-800">
+                                💰 Tarif / Komisi per Tugas Selesai (Rp)
+                            </label>
+                            <span class="text-xs text-slate-500">Kosongkan jika ingin mengikuti tarif master</span>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 font-semibold text-sm">Rp</span>
+                            <input
+                                type="number"
+                                step="50"
+                                min="0"
+                                id="reward_amount"
+                                name="reward_amount"
+                                x-model="rewardAmount"
+                                placeholder="Biarkan kosong untuk tarif master default"
+                                class="w-full text-sm font-semibold border-slate-300 rounded-lg pl-10 pr-3 py-2 bg-white focus:ring-emerald-500 focus:border-emerald-500"
+                            >
+                        </div>
+                        <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                            <span class="text-[11px] text-slate-500 mr-1">Preset Cepat:</span>
+                            <button type="button" @click="setPresetRate(500)" class="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[11px] font-medium transition">Rp 500</button>
+                            <button type="button" @click="setPresetRate(750)" class="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[11px] font-medium transition">Rp 750</button>
+                            <button type="button" @click="setPresetRate(1000)" class="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[11px] font-medium transition">Rp 1.000</button>
+                            <button type="button" @click="setPresetRate(1500)" class="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[11px] font-medium transition">Rp 1.500</button>
+                            <button type="button" @click="setPresetRate(2000)" class="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[11px] font-medium transition">Rp 2.000</button>
+                            <button type="button" @click="setPresetRate(10000)" class="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[11px] font-medium transition">Rp 10.000</button>
+                            <button type="button" @click="setPresetRate(25000)" class="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[11px] font-medium transition">Rp 25.000</button>
+                            <button type="button" @click="rewardAmount = ''" class="px-2 py-0.5 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded text-[11px] font-medium transition">Default</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- URL Backlink Klien & Target Keyword -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="client_url" class="block text-sm font-semibold text-slate-800 mb-1">
+                            🔗 URL Target Backlink Klien <span class="text-xs font-normal text-slate-400">(Opsional / Dianjurkan)</span>
+                        </label>
+                        <input
+                            type="url"
+                            id="client_url"
+                            name="client_url"
+                            value="{{ old('client_url') }}"
+                            placeholder="https://klien-kami.com/jasa-seo/"
+                            class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                        <div class="text-[11px] text-slate-400 mt-1">Halaman web klien yang ingin disisipkan backlink oleh blogwalker.</div>
+                    </div>
+
+                    <div>
+                        <label for="keyword" class="block text-sm font-semibold text-slate-800 mb-1">
+                            Anchor Text / Keyword Target <span class="text-xs font-normal text-slate-400">(Opsional)</span>
+                        </label>
+                        <input
+                            type="text"
+                            id="keyword"
+                            name="keyword"
+                            value="{{ old('keyword') }}"
+                            placeholder="Contoh: Jasa Pembuatan Website"
+                            class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                        <div class="text-[11px] text-slate-400 mt-1">Kata kunci yang diarahkan kepada blogwalker untuk dipasang.</div>
+                    </div>
                 </div>
 
                 <div>
                     <label for="notes" class="block text-sm font-semibold text-slate-800 mb-1">
-                        Catatan Khusus <span class="text-xs font-normal text-slate-400">(Opsional)</span>
+                        Catatan Khusus / Brief Tugas <span class="text-xs font-normal text-slate-400">(Opsional)</span>
                     </label>
                     <input
                         type="text"
                         id="notes"
                         name="notes"
                         value="{{ old('notes') }}"
-                        placeholder="Contoh: Beri komentar minimal 2 kalimat bermutu"
+                        placeholder="Contoh: Beri komentar minimal 2 kalimat bermutu / Artikel min 500 kata"
                         class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500"
                     >
-                    <div class="text-[11px] text-slate-400 mt-1">Petunjuk pengerjaan yang akan dibaca oleh tim blogwalker.</div>
+                    <div class="text-[11px] text-slate-400 mt-1">Petunjuk pengerjaan yang akan dibaca langsung oleh blogwalker.</div>
                 </div>
             </div>
 

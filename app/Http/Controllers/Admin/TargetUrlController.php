@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Domain;
 use App\Models\TargetUrl;
 use App\Services\DomainService;
+use App\Services\TaskTypeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -20,6 +21,10 @@ class TargetUrlController extends Controller
     {
         $query = TargetUrl::with(['domain', 'takenBy', 'submission']);
 
+        if ($request->filled('task_type')) {
+            $query->where('task_type', $request->task_type);
+        }
+
         if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
@@ -29,11 +34,13 @@ class TargetUrlController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('url', 'like', "%{$search}%")
                     ->orWhere('root_domain', 'like', "%{$search}%")
-                    ->orWhere('keyword', 'like', "%{$search}%");
+                    ->orWhere('keyword', 'like', "%{$search}%")
+                    ->orWhere('client_url', 'like', "%{$search}%");
             });
         }
 
         $targets = $query->latest()->paginate(25)->withQueryString();
+        $taskTypes = TaskTypeService::all();
 
         $stats = [
             'total' => TargetUrl::count(),
@@ -43,21 +50,30 @@ class TargetUrlController extends Controller
             'skipped' => TargetUrl::where('status', 'skipped')->count(),
         ];
 
-        return view('admin.targets.index', compact('targets', 'stats'));
+        return view('admin.targets.index', compact('targets', 'stats', 'taskTypes'));
     }
 
     public function create(): View
     {
-        return view('admin.targets.create');
+        $taskTypes = TaskTypeService::all();
+
+        return view('admin.targets.create', compact('taskTypes'));
     }
 
     public function store(Request $request): RedirectResponse
     {
-        $request->validate([
+        $validated = $request->validate([
             'urls' => 'required|string',
+            'task_type' => 'nullable|string',
+            'client_url' => 'nullable|string',
             'keyword' => 'nullable|string|max:255',
+            'reward_amount' => 'nullable|numeric|min:0',
             'notes' => 'nullable|string|max:500',
         ]);
+
+        $taskType = $validated['task_type'] ?? TaskTypeService::COMMENT;
+        $clientUrl = ! empty($validated['client_url']) ? trim($validated['client_url']) : null;
+        $rewardAmount = ! empty($validated['reward_amount']) ? (float) $validated['reward_amount'] : TaskTypeService::getRate($taskType);
 
         $rawUrls = preg_split('/[\r\n]+/', $request->urls, -1, PREG_SPLIT_NO_EMPTY);
         $importedCount = 0;
@@ -93,16 +109,28 @@ class TargetUrlController extends Controller
                 continue;
             }
 
+            // Resolve IP and Subnet for domain
+            $ipData = $this->domainService->resolveIpAndSubnet($rootDomain);
+
             // Find or create domain
             $domain = Domain::firstOrCreate(
                 ['root_domain' => $rootDomain],
                 [
                     'tld' => $tld,
+                    'ip_address' => $ipData['ip'],
+                    'ip_subnet' => $ipData['subnet'],
                     'max_limit' => 5,
                     'url_count' => 0,
                     'is_locked' => false,
                 ]
             );
+
+            if (empty($domain->ip_subnet) && ! empty($ipData['subnet'])) {
+                $domain->update([
+                    'ip_address' => $ipData['ip'],
+                    'ip_subnet' => $ipData['subnet'],
+                ]);
+            }
 
             // Determine status based on domain quota
             $status = 'available';
@@ -113,10 +141,13 @@ class TargetUrlController extends Controller
 
             TargetUrl::create([
                 'url' => $rawUrl,
+                'task_type' => $taskType,
+                'client_url' => $clientUrl,
                 'domain_id' => $domain->id,
                 'root_domain' => $rootDomain,
-                'keyword' => $request->keyword,
-                'notes' => $request->notes,
+                'keyword' => $validated['keyword'] ?? null,
+                'reward_amount' => $rewardAmount,
+                'notes' => $validated['notes'] ?? null,
                 'status' => $status,
                 'created_by_user_id' => auth()->id(),
             ]);
