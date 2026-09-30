@@ -131,12 +131,11 @@ class SeoMetricService
             $data = $response->json();
 
             if ($response->successful()) {
-                $dr = $data['domain_rating'] ?? $data['domainRating'] ?? $data['dr'] ?? null;
-                $drInt = $dr !== null ? (int) round((float) $dr) : null;
+                $drInt = $this->extractDrFromResponse($data);
 
                 return [
                     'success' => true,
-                    'message' => "Koneksi Ahrefs BERHASIL! (Test DR google.com: {$drInt})",
+                    'message' => 'Koneksi Ahrefs BERHASIL! (Test DR google.com: '.($drInt !== null ? $drInt : 'Terhubung').')',
                     'dr' => $drInt,
                 ];
             }
@@ -280,6 +279,60 @@ class SeoMetricService
     }
 
     /**
+     * Clean and normalize domain name for SEO APIs.
+     */
+    public function cleanTargetDomain(string $domain): string
+    {
+        $domain = trim($domain);
+        $domain = preg_replace('#^https?://#i', '', $domain);
+        $domain = explode('/', $domain)[0];
+        $domain = explode(':', $domain)[0];
+
+        return strtolower(trim($domain));
+    }
+
+    /**
+     * Safely extract numeric DR value from various Ahrefs API response structures.
+     */
+    public function extractDrFromResponse(mixed $data): ?int
+    {
+        if (! is_array($data)) {
+            return null;
+        }
+
+        // 1. Nested: { "domain_rating": { "domain_rating": 89.0, ... } }
+        if (isset($data['domain_rating']) && is_array($data['domain_rating'])) {
+            $inner = $data['domain_rating']['domain_rating'] ?? $data['domain_rating']['dr'] ?? null;
+            if ($inner !== null && is_numeric($inner)) {
+                return (int) round((float) $inner);
+            }
+        }
+
+        // 2. Nested under 'data' or 'result'
+        if (isset($data['data']) && is_array($data['data'])) {
+            $val = $this->extractDrFromResponse($data['data']);
+            if ($val !== null) {
+                return $val;
+            }
+        }
+        if (isset($data['result']) && is_array($data['result'])) {
+            $val = $this->extractDrFromResponse($data['result']);
+            if ($val !== null) {
+                return $val;
+            }
+        }
+
+        // 3. Flat: { "domain_rating": 89.0 } or { "domainRating": 89.0 } or { "dr": 89 }
+        foreach (['domain_rating', 'domainRating', 'dr'] as $key) {
+            if (isset($data[$key]) && is_numeric($data[$key])) {
+                return (int) round((float) $data[$key]);
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Fetch Domain Rating (DR) detailed from Ahrefs official API if key is present.
      *
      * @return array{dr: ?int, error: ?string}
@@ -291,13 +344,15 @@ class SeoMetricService
             return ['dr' => null, 'error' => null];
         }
 
+        $targetDomain = $this->cleanTargetDomain($rootDomain);
+
         try {
             $response = Http::timeout(8)
                 ->withoutVerifying()
                 ->withToken($key)
                 ->acceptJson()
                 ->get('https://api.ahrefs.com/v3/site-explorer/domain-rating', [
-                    'target' => $rootDomain,
+                    'target' => $targetDomain,
                     'date' => now()->toDateString(),
                 ]);
 
@@ -307,7 +362,7 @@ class SeoMetricService
                     ->withToken($key)
                     ->acceptJson()
                     ->get('https://api.ahrefs.com/v3/public/domain-rating-free', [
-                        'target' => $rootDomain,
+                        'target' => $targetDomain,
                         'output' => 'json',
                     ]);
 
@@ -318,11 +373,13 @@ class SeoMetricService
 
             if ($response->successful()) {
                 $data = $response->json();
-                $dr = $data['domain_rating'] ?? $data['domainRating'] ?? $data['dr'] ?? null;
+                $dr = $this->extractDrFromResponse($data);
 
-                if ($dr !== null && is_numeric($dr)) {
-                    return ['dr' => (int) round((float) $dr), 'error' => null];
+                if ($dr !== null) {
+                    return ['dr' => $dr, 'error' => null];
                 }
+
+                Log::warning("Ahrefs DR response could not parse DR for {$targetDomain}: ".$response->body());
 
                 return ['dr' => null, 'error' => 'Ahrefs tidak menemukan data DR untuk domain ini.'];
             }
@@ -339,11 +396,11 @@ class SeoMetricService
                 return ['dr' => null, 'error' => "Ahrefs API menolak (HTTP 403 Forbidden): {$msg}. Akun Ahrefs belum memiliki paket API v3."];
             }
 
-            Log::warning("Ahrefs DR API returned status {$status} for {$rootDomain}: {$response->body()}");
+            Log::warning("Ahrefs DR API returned status {$status} for {$targetDomain}: {$response->body()}");
 
             return ['dr' => null, 'error' => "Ahrefs mengembalikan HTTP {$status}: {$msg}"];
         } catch (\Throwable $e) {
-            Log::warning("Ahrefs DR API error for {$rootDomain}: {$e->getMessage()}");
+            Log::warning("Ahrefs DR API error for {$targetDomain}: {$e->getMessage()}");
 
             return ['dr' => null, 'error' => 'Koneksi ke Ahrefs gagal: '.$e->getMessage()];
         }
@@ -369,6 +426,8 @@ class SeoMetricService
             return ['da' => null, 'pa' => null, 'error' => null];
         }
 
+        $targetDomain = $this->cleanTargetDomain($rootDomain);
+
         try {
             $request = Http::timeout(8)->withoutVerifying()->acceptJson();
 
@@ -381,7 +440,7 @@ class SeoMetricService
             }
 
             $response = $request->post('https://lsapi.seomoz.com/v2/url_metrics', [
-                'targets' => [$rootDomain],
+                'targets' => [$targetDomain],
             ]);
 
             if ($response->successful()) {
@@ -431,13 +490,15 @@ class SeoMetricService
             return ['pr' => null, 'error' => null];
         }
 
+        $targetDomain = $this->cleanTargetDomain($rootDomain);
+
         try {
             $response = Http::timeout(8)
                 ->withoutVerifying()
                 ->withHeaders(['API-OPR' => $key])
                 ->acceptJson()
                 ->get('https://openpagerank.com/api/v1.0/getPageRank', [
-                    'domains' => [$rootDomain],
+                    'domains' => [$targetDomain],
                 ]);
 
             if ($response->successful()) {

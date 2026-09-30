@@ -267,4 +267,31 @@ class SeoMetricsIntegrationTest extends TestCase
         $subResponse->assertSee('DR 70');
         $subResponse->assertSee('PR 6.0');
     }
+
+    public function test_ahrefs_nested_domain_rating_response_is_parsed_correctly(): void
+    {
+        AppSetting::set('ahrefs_api_key', 'valid_ahrefs_key');
+
+        Http::fake([
+            'https://api.ahrefs.com/v3/*' => Http::response([
+                'domain_rating' => [
+                    'domain_rating' => 91.4,
+                    'ahrefs_rank' => 85,
+                ],
+            ], 200),
+        ]);
+
+        $domain = Domain::create([
+            'root_domain' => 'https://sharepoint.com/',
+            'tld' => '.com',
+            'max_limit' => 5,
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.domains.fetch-seo', $domain));
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $domain->refresh();
+        $this->assertEquals(91, $domain->dr);
+    }
 }
