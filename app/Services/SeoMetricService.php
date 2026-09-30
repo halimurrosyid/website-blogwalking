@@ -40,6 +40,36 @@ class SeoMetricService
     }
 
     /**
+     * Check if Moz API is enabled.
+     */
+    public static function isMozEnabled(): bool
+    {
+        $val = trim((string) AppSetting::get('moz_api_token', ''));
+
+        return $val !== '';
+    }
+
+    /**
+     * Check if Ahrefs API is enabled.
+     */
+    public static function isAhrefsEnabled(): bool
+    {
+        $val = trim((string) AppSetting::get('ahrefs_api_key', ''));
+
+        return $val !== '';
+    }
+
+    /**
+     * Check if OpenPageRank API is enabled.
+     */
+    public static function isOpenPageRankEnabled(): bool
+    {
+        $val = trim((string) AppSetting::get('openpagerank_api_key', ''));
+
+        return $val !== '';
+    }
+
+    /**
      * Check if at least one SEO API provider has an active key.
      */
     public function hasAnyKeyConfigured(): bool

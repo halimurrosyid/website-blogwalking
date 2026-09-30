@@ -180,7 +180,26 @@ class SeoMetricsIntegrationTest extends TestCase
             'is_paid' => false,
         ]);
 
-        // Check targets index as worker
+        // 1. When API keys are NOT configured, metrics must NOT be visible
+        AppSetting::set('moz_api_token', '');
+        AppSetting::set('ahrefs_api_key', '');
+        AppSetting::set('openpagerank_api_key', '');
+
+        $targetResponse = $this->actingAs($this->worker)->get(route('blogwalker.targets.index'));
+        $targetResponse->assertStatus(200);
+        $targetResponse->assertDontSee('DA 60');
+        $targetResponse->assertDontSee('DR 70');
+
+        $subResponse = $this->actingAs($this->worker)->get(route('blogwalker.submissions.index'));
+        $subResponse->assertStatus(200);
+        $subResponse->assertDontSee('DA 60');
+        $subResponse->assertDontSee('DR 70');
+
+        // 2. When API keys ARE configured, metrics become visible
+        AppSetting::set('moz_api_token', 'mock_moz');
+        AppSetting::set('ahrefs_api_key', 'mock_ahrefs');
+        AppSetting::set('openpagerank_api_key', 'mock_opr');
+
         $targetResponse = $this->actingAs($this->worker)->get(route('blogwalker.targets.index'));
         $targetResponse->assertStatus(200);
         $targetResponse->assertSee('DA 60');
@@ -188,7 +207,6 @@ class SeoMetricsIntegrationTest extends TestCase
         $targetResponse->assertSee('DR 70');
         $targetResponse->assertSee('PR 6.0');
 
-        // Check submissions index as worker
         $subResponse = $this->actingAs($this->worker)->get(route('blogwalker.submissions.index'));
         $subResponse->assertStatus(200);
         $subResponse->assertSee('DA 60');

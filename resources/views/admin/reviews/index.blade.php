@@ -151,17 +151,22 @@
                         <td class="px-6 py-4 max-w-sm">
                             <div class="flex items-center gap-1.5 flex-wrap">
                                 <span class="font-bold text-slate-900 text-xs">{{ $sub->domain->root_domain }}</span>
-                                @if($sub->domain && ($sub->domain->da || $sub->domain->pa || $sub->domain->dr || $sub->domain->pr))
-                                    @if($sub->domain->da)
+                                @php
+                                    $hasMozKey = \App\Services\SeoMetricService::isMozEnabled();
+                                    $hasAhrefsKey = \App\Services\SeoMetricService::isAhrefsEnabled();
+                                    $hasOprKey = \App\Services\SeoMetricService::isOpenPageRankEnabled();
+                                @endphp
+                                @if($sub->domain && (($hasMozKey && ($sub->domain->da || $sub->domain->pa)) || ($hasAhrefsKey && $sub->domain->dr) || ($hasOprKey && $sub->domain->pr)))
+                                    @if($hasMozKey && $sub->domain->da)
                                         <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-semibold font-mono">DA {{ $sub->domain->da }}</span>
                                     @endif
-                                    @if($sub->domain->pa)
+                                    @if($hasMozKey && $sub->domain->pa)
                                         <span class="text-[10px] bg-cyan-100 text-cyan-800 px-1.5 py-0.5 rounded font-semibold font-mono">PA {{ $sub->domain->pa }}</span>
                                     @endif
-                                    @if($sub->domain->dr && ! $sub->domain_rating)
+                                    @if($hasAhrefsKey && $sub->domain->dr && ! $sub->domain_rating)
                                         <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold font-mono">DR {{ $sub->domain->dr }}</span>
                                     @endif
-                                    @if($sub->domain->pr)
+                                    @if($hasOprKey && $sub->domain->pr)
                                         <span class="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-semibold font-mono">PR {{ $sub->domain->pr }}</span>
                                     @endif
                                 @endif
@@ -171,7 +176,7 @@
                                 @if($sub->social_account)
                                     <span class="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-semibold font-mono" title="Akun Medsos Pelaksana">👤 @<span>{{ $sub->social_account }}</span></span>
                                 @endif
-                                @if($sub->domain_rating)
+                                @if($sub->domain_rating && $sub->task_type === 'comment_high_dr')
                                     <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold">DR {{ $sub->domain_rating }}</span>
                                 @endif
                             </div>

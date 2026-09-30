@@ -2,9 +2,11 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\AppSetting;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Schema;
 use Symfony\Component\HttpFoundation\Response;
@@ -50,7 +52,7 @@ class EnsureInstalled
      */
     protected function ensureDatabaseUpToDate(): void
     {
-        $markerFile = storage_path('framework/schema_v6.migrated');
+        $markerFile = storage_path('framework/schema_v7.migrated');
 
         if (file_exists($markerFile)) {
             return;
@@ -67,6 +69,21 @@ class EnsureInstalled
                 ! Schema::hasColumn('submissions', 'social_account') ||
                 ! Schema::hasColumn('target_urls', 'task_type')) {
                 Artisan::call('migrate', ['--force' => true]);
+            }
+
+            // Cleanup bogus default DR 40 from submissions where task_type was not comment_high_dr
+            if (Schema::hasTable('submissions') && Schema::hasColumn('submissions', 'domain_rating')) {
+                DB::table('submissions')
+                    ->where('task_type', '!=', 'comment_high_dr')
+                    ->where('domain_rating', 40)
+                    ->update(['domain_rating' => null]);
+            }
+
+            // Reset unverified domain DR if Ahrefs API key has not been configured yet
+            if (Schema::hasTable('domains') && Schema::hasColumn('domains', 'dr') && empty(AppSetting::get('ahrefs_api_key'))) {
+                DB::table('domains')
+                    ->whereNull('seo_updated_at')
+                    ->update(['dr' => null]);
             }
 
             if (! file_exists(public_path('storage'))) {

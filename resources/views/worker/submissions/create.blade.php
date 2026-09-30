@@ -192,7 +192,8 @@
                     max="100"
                     name="domain_rating"
                     id="domain_rating"
-                    value="{{ old('domain_rating', 40) }}"
+                    value="{{ old('domain_rating') }}"
+                    :disabled="taskType !== 'comment_high_dr'"
                     class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm font-semibold"
                     placeholder="Contoh: 45"
                 >

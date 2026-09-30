@@ -171,6 +171,10 @@ class SubmissionController extends Controller
                 }
             }
 
+            $domainRating = $taskType === TaskTypeService::COMMENT_HIGH_DR
+                ? ($request->filled('domain_rating') ? (int) $request->input('domain_rating') : null)
+                : null;
+
             // Record submission with domain lock protection & multi-task data
             $submission = $domainService->recordSubmission(
                 $user,
@@ -183,7 +187,7 @@ class SubmissionController extends Controller
                 $request->input('published_url'),
                 $request->input('platform'),
                 $rewardAmount,
-                $request->input('domain_rating'),
+                $domainRating,
                 $target?->id,
                 $request->input('social_account')
             );
