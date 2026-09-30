@@ -87,13 +87,16 @@ Aplikasi ini dilengkapi wizard instalasi interaktif layaknya **WordPress**:
 
 ---
 
-### 4. Pemeliharaan Sistem Mandiri (Zero Terminal)
+### 4. Pemeliharaan Sistem & Pusat Migrasi (Zero Terminal)
 Tersedia menu khusus **Sistem** (`/admin/system`) pada panel Super Admin untuk pengoperasian tanpa SSH/terminal:
 * 🚀 **Bersihkan Seluruh Cache:** 1-klik untuk membersihkan cache view, config, dan route setelah upload perubahan file.
 * 🔄 **Update Struktur Database (Migrate):** 1-klik untuk menjalankan migrasi tabel baru jika ada fitur tambahan di masa depan.
 * 📁 **Perbaiki Storage Link:** 1-klik untuk menghubungkan direktori upload bukti foto dan KTP.
-* 🌐 **Pengaturan URL Domain Website (Ganti Domain):** Ubah nama domain web langsung dari form GUI jika berpindah domain.
-* 💾 **Download Backup SQL:** 1-klik untuk mengunduh salinan database lengkap dalam format `.sql` ke komputer tanpa membuka phpMyAdmin.
+* 🌐 **Pengaturan URL Domain Website (Ganti Domain):** Ubah nama domain web langsung dari form GUI jika berpindah domain tanpa perlu mengedit `.env` manual.
+* 💾 **Download Backup Database (.SQL):** 1-klik untuk mengunduh salinan database lengkap dalam format `.sql` ke komputer tanpa membuka phpMyAdmin.
+* 📦 **Download Paket Lengkap Migrasi (.ZIP):** Mengunduh arsip ZIP tunggal yang mencakup file database SQL + seluruh file media upload di folder `storage` (foto KTP, buku rekening, screenshot bukti komentar). Sangat praktis untuk pindah hosting/domain.
+* 📥 **Pulihkan Cadangan (Restore Data):** Upload file `.sql` atau paket `.zip` langsung dari browser untuk memulihkan seluruh data dan media secara otomatis.
+* 🔁 **Beralih / Reset Koneksi Database (Wizard):** 1-klik untuk membuka kembali wizard installer jika ingin mengganti koneksi database dari SQLite ke MySQL Hostinger.
 
 ---
 

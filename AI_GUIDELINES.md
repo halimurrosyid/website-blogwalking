@@ -16,7 +16,7 @@ Dokumen ini ditujukan untuk seluruh asisten kecerdasan buatan (AI Assistants sep
 | **Sistem Periode** | Periode bulanan (`periods`). Super Admin mengevaluasi target minimal dan melakukan rollover via GUI |
 | **Pendaftaran Mandiri** | Calon tim daftar via `/register` (upload foto KTP & buku tabungan) &rarr; butuh approval Super Admin |
 | **Web Installer** | Wizard instalasi GUI di `/install` (seperti WordPress). Terkunci jika ada `storage/installed` |
-| **Menu Sistem Admin** | Di `/admin/system`, menyediakan tombol GUI untuk clear cache, migrate DB, storage link, ganti URL domain, dan backup SQL |
+| **Menu Sistem Admin** | Di `/admin/system`, menyediakan tombol GUI untuk clear cache, migrate DB, storage link, ganti URL domain, backup SQL, backup full ZIP, dan restore database/media |
 
 ---
 

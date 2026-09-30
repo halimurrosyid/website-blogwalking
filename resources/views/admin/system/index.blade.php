@@ -113,7 +113,7 @@
             </form>
         </div>
 
-        <!-- 4. Backup Database SQL Langsung Download -->
+        <!-- 4. Backup Database SQL & Paket Lengkap -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col justify-between space-y-4 hover:border-slate-300 transition">
             <div>
                 <div class="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold mb-3">
@@ -121,17 +121,164 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
                     </svg>
                 </div>
-                <h3 class="text-sm font-bold text-slate-900">Download Backup SQL</h3>
+                <h3 class="text-sm font-bold text-slate-900">Backup & Migrasi Data</h3>
                 <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                    Unduh file cadangan database lengkap langsung ke komputer Anda tanpa perlu login ke phpMyAdmin.
+                    Unduh cadangan database SQL atau paket lengkap ZIP (termasuk foto bukti & KTP) langsung ke perangkat Anda.
                 </p>
             </div>
-            <a href="{{ route('admin.system.backup') }}" class="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5">
-                <span>Unduh File .SQL</span>
-                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-            </a>
+            <div class="space-y-2">
+                <a href="{{ route('admin.system.backup') }}" class="w-full py-2 px-3 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                    <span>Unduh Database (.SQL)</span>
+                </a>
+                @if($zipSupported)
+                <a href="{{ route('admin.system.backup-full') }}" class="w-full py-2 px-3 rounded-xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4"/></svg>
+                    <span>Paket Lengkap (.ZIP)</span>
+                </a>
+                @endif
+            </div>
         </div>
 
+    </div>
+
+    <!-- Pusat Migrasi, Backup & Restore Data -->
+    <div class="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+        <div class="p-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="text-sm font-bold text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                    <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4 M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    Pusat Migrasi, Backup & Restore Data
+                </h2>
+                <p class="text-xs text-slate-500 mt-1">
+                    Gunakan fitur ini untuk mencadangkan seluruh data website atau memulihkan data saat Anda berpindah ke domain baru / hosting baru tanpa risiko kehilangan data.
+                </p>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold {{ $zipSupported ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600' }}">
+                    <span class="w-1.5 h-1.5 rounded-full {{ $zipSupported ? 'bg-emerald-500' : 'bg-slate-400' }}"></span>
+                    {{ $zipSupported ? 'Format ZIP & SQL Siap' : 'Format SQL Siap' }}
+                </span>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-100">
+            <!-- 1. Ekspor Cadangan (Download Backup) -->
+            <div class="p-6 space-y-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center justify-center">1</span>
+                    <h3 class="text-sm font-bold text-slate-900">Download Cadangan (Backup)</h3>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Pilih tipe cadangan yang ingin Anda simpan ke komputer Anda:
+                </p>
+
+                <div class="space-y-3 pt-2">
+                    <!-- Option A: Database SQL -->
+                    <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-amber-100 text-amber-800">.SQL</span>
+                                <span>Cadangan Database Saja</span>
+                            </div>
+                            <p class="text-[11px] text-slate-500 mt-1">
+                                Berisi data akun pengguna, target link, log komentar, target periode, dan komisi. Ukuran file sangat ringan.
+                            </p>
+                        </div>
+                        <a href="{{ route('admin.system.backup') }}" class="px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            <span>Unduh SQL</span>
+                        </a>
+                    </div>
+
+                    <!-- Option B: Full Package ZIP -->
+                    @if($zipSupported)
+                    <div class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <div class="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                                <span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-emerald-600 text-white">.ZIP</span>
+                                <span>Paket Lengkap Migrasi (DB + File Upload)</span>
+                            </div>
+                            <p class="text-[11px] text-emerald-700/80 mt-1">
+                                Sangat direkomendasikan untuk pindah hosting/domain. Berisi database SQL + seluruh foto KTP, buku rekening, dan screenshot bukti komentar.
+                            </p>
+                        </div>
+                        <a href="{{ route('admin.system.backup-full') }}" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-1.5 shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                            <span>Unduh ZIP</span>
+                        </a>
+                    </div>
+                    @endif
+                </div>
+            </div>
+
+            <!-- 2. Impor / Pulihkan Cadangan (Restore) -->
+            <div class="p-6 space-y-4">
+                <div class="flex items-center gap-2">
+                    <span class="w-7 h-7 rounded-lg bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center">2</span>
+                    <h3 class="text-sm font-bold text-slate-900">Pulihkan Cadangan (Restore)</h3>
+                </div>
+                <p class="text-xs text-slate-500 leading-relaxed">
+                    Unggah file cadangan <code class="font-mono text-slate-700">.sql</code> atau paket <code class="font-mono text-slate-700">.zip</code> untuk memulihkan seluruh data secara instan:
+                </p>
+
+                <form method="POST" action="{{ route('admin.system.restore') }}" enctype="multipart/form-data" onsubmit="return confirm('PERINGATAN: Memulihkan cadangan akan menimpa data yang ada saat ini dengan data dari file cadangan. Apakah Anda yakin ingin melanjutkan proses pemulihan?')" class="space-y-4 pt-2">
+                    @csrf
+                    <div>
+                        <label for="backup_file" class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-2">
+                            Pilih File Cadangan (.sql atau .zip) *
+                        </label>
+                        <input type="file" name="backup_file" id="backup_file" accept=".sql,.zip" required
+                            class="w-full text-xs text-slate-600 file:mr-3 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 file:cursor-pointer border border-slate-300 rounded-xl p-2 bg-white">
+                        <span class="text-[11px] text-slate-400 mt-1 block">Maksimal ukuran file: 100 MB. Jika Anda mengunggah .zip, foto bukti dan database akan dipulihkan sekaligus.</span>
+                    </div>
+
+                    <div class="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-start gap-2">
+                        <span class="shrink-0 text-sm">⚠️</span>
+                        <div>
+                            <strong>Catatan Keamanan:</strong> Seluruh tabel database akan disinkronkan sesuai data dalam file cadangan. Pastikan file cadangan berasal dari sistem Blogwalker yang valid.
+                        </div>
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-xs transition cursor-pointer flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l4-4m0 0l4 4m-4-4v12"/>
+                        </svg>
+                        <span>Mulai Pemulihan Data (Restore)</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Panduan Migrasi ke Domain Baru -->
+        <div class="bg-slate-50/70 p-6 border-t border-slate-100">
+            <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Panduan Praktis Migrasi Ketika Ganti Domain Baru
+            </h4>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                <div class="p-3 bg-white rounded-xl border border-slate-200">
+                    <span class="font-bold text-emerald-700 block mb-1">Langkah 1: Di Domain Lama</span>
+                    <p class="text-slate-500 text-[11px]">
+                        Klik tombol <strong>Unduh ZIP (Paket Lengkap)</strong> di atas untuk mengamankan seluruh database dan foto bukti ke komputer Anda.
+                    </p>
+                </div>
+                <div class="p-3 bg-white rounded-xl border border-slate-200">
+                    <span class="font-bold text-emerald-700 block mb-1">Langkah 2: Di Domain Baru</span>
+                    <p class="text-slate-500 text-[11px]">
+                        Deploy website di domain baru Anda, masuk ke menu <strong>Sistem</strong>, lalu unggah file ZIP tadi pada formulir <strong>Pulihkan Cadangan</strong>.
+                    </p>
+                </div>
+                <div class="p-3 bg-white rounded-xl border border-slate-200">
+                    <span class="font-bold text-emerald-700 block mb-1">Langkah 3: Perbarui URL Domain</span>
+                    <p class="text-slate-500 text-[11px]">
+                        Isi nama domain baru Anda pada kotak <strong>Pengaturan URL Domain Website</strong> di bawah ini lalu klik Simpan. Selesai!
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Pengaturan Domain Aplikasi (Ketika Ganti Domain) -->

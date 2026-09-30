@@ -36,7 +36,7 @@ class SystemMaintenanceTest extends TestCase
         $response->assertSee('Bersihkan Seluruh Cache');
         $response->assertSee('Update Struktur Database');
         $response->assertSee('Perbaiki Storage Link');
-        $response->assertSee('Download Backup SQL');
+        $response->assertSee('Backup & Migrasi Data');
     }
 
     public function test_super_admin_can_clear_cache_via_web(): void
@@ -89,6 +89,57 @@ class SystemMaintenanceTest extends TestCase
         $response = $this->actingAs($admin)->get(route('admin.system.backup'));
         $response->assertStatus(200);
         $response->assertHeader('Content-Type', 'application/sql');
+    }
+
+    public function test_super_admin_can_download_full_backup_zip(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.system.backup-full'));
+
+        if (class_exists(\ZipArchive::class)) {
+            $response->assertStatus(200);
+            $response->assertHeader('Content-Type', 'application/zip');
+        } else {
+            $response->assertRedirect();
+            $response->assertSessionHas('error');
+        }
+    }
+
+    public function test_super_admin_can_restore_database_from_sql_file(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+
+        $sqlContent = "-- Test Backup\nSELECT 1;\n";
+        $file = \Illuminate\Http\UploadedFile::fake()->createWithContent('backup.sql', $sqlContent);
+
+        $response = $this->actingAs($admin)->post(route('admin.system.restore'), [
+            'backup_file' => $file,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+    }
+
+    public function test_super_admin_can_reset_installer(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'is_active' => true,
+            'approval_status' => 'approved',
+        ]);
+
+        $response = $this->actingAs($admin)->post(route('admin.system.reset-installer'));
+        $response->assertRedirect(route('install.index'));
+        $this->assertGuest();
     }
 
     public function test_super_admin_can_update_domain_url(): void

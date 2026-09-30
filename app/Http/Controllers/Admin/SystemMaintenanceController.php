@@ -8,7 +8,11 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
+use ZipArchive;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 class SystemMaintenanceController extends Controller
 {
@@ -46,6 +50,8 @@ class SystemMaintenanceController extends Controller
             $dbTablesCount = 0;
         }
 
+        $zipSupported = class_exists(ZipArchive::class);
+
         return view('admin.system.index', [
             'serverInfo' => $serverInfo,
             'publicStorageExists' => $publicStorageExists,
@@ -54,6 +60,7 @@ class SystemMaintenanceController extends Controller
             'dbTablesCount' => $dbTablesCount,
             'appUrl' => config('app.url', url('/')),
             'appName' => config('app.name', 'Blogwalker Pro'),
+            'zipSupported' => $zipSupported,
         ]);
     }
 
@@ -64,7 +71,6 @@ class SystemMaintenanceController extends Controller
     {
         try {
             Artisan::call('optimize:clear');
-            $output = Artisan::output();
 
             return back()->with('success', 'Cache sistem berhasil dibersihkan! (Config, Route, View, Application Cache)');
         } catch (\Exception $e) {
@@ -106,63 +112,290 @@ class SystemMaintenanceController extends Controller
     /**
      * Export complete SQL database backup directly as a browser download.
      */
-    public function backupDatabase(): StreamedResponse|RedirectResponse
+    public function backupDatabase(): BinaryFileResponse|RedirectResponse
     {
         try {
-            $dbDriver = config('database.default');
-            $filename = 'backup_blogwalker_'.date('Y-m-d_His').'.sql';
+            $filename = 'backup_blogwalker_db_'.date('Y-m-d_His').'.sql';
+            $tempSqlPath = storage_path('app/backup_temp_'.uniqid().'.sql');
 
-            return response()->streamDownload(function () use ($dbDriver) {
-                echo "-- Blogwalker Database Backup\n";
-                echo '-- Generated At: '.date('Y-m-d H:i:s')."\n";
-                echo "-- Driver: {$dbDriver}\n\n";
+            $this->writeSqlDumpToFile($tempSqlPath);
 
-                if ($dbDriver === 'sqlite') {
-                    $sqlitePath = config('database.connections.sqlite.database');
-                    if (file_exists($sqlitePath)) {
-                        echo file_get_contents($sqlitePath);
+            return response()->download($tempSqlPath, $filename, [
+                'Content-Type' => 'application/sql',
+            ])->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal mengekspor database: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Export complete migration package (Database SQL + Uploaded Files) as a ZIP archive.
+     */
+    public function backupFullZip(): BinaryFileResponse|RedirectResponse
+    {
+        if (! class_exists(ZipArchive::class)) {
+            return back()->with('error', 'Ekstensi PHP ZipArchive tidak aktif pada server hosting ini. Silakan gunakan Download Backup SQL.');
+        }
+
+        try {
+            $tempZipPath = storage_path('app/backup_full_'.uniqid().'.zip');
+            $tempSqlPath = storage_path('app/backup_temp_sql_'.uniqid().'.sql');
+
+            $zip = new ZipArchive();
+            if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
+                return back()->with('error', 'Gagal membuat file arsip ZIP cadangan.');
+            }
+
+            // 1. Generate SQL dump and add to ZIP
+            $this->writeSqlDumpToFile($tempSqlPath);
+            $zip->addFile($tempSqlPath, 'database.sql');
+
+            // 2. Add files from storage/app/public
+            $storagePublicPath = storage_path('app/public');
+            if (file_exists($storagePublicPath)) {
+                $files = new RecursiveIteratorIterator(
+                    new RecursiveDirectoryIterator($storagePublicPath, RecursiveDirectoryIterator::SKIP_DOTS),
+                    RecursiveIteratorIterator::LEAVES_ONLY
+                );
+
+                foreach ($files as $file) {
+                    if (! $file->isDir()) {
+                        $filePath = $file->getRealPath();
+                        $relativePath = 'storage/'.substr($filePath, strlen($storagePublicPath) + 1);
+                        $relativePath = str_replace('\\', '/', $relativePath);
+                        $zip->addFile($filePath, $relativePath);
                     }
-                } else {
-                    // MySQL Table Export
-                    $tables = DB::select('SHOW TABLES');
-                    $dbKey = 'Tables_in_'.config('database.connections.mysql.database');
+                }
+            }
 
-                    foreach ($tables as $tableObj) {
-                        $tableArray = (array) $tableObj;
-                        $tableName = reset($tableArray);
+            $zip->close();
 
-                        echo "\n-- Table structure for `{$tableName}`\n";
-                        echo "DROP TABLE IF EXISTS `{$tableName}`;\n";
+            // Clean up temp SQL
+            if (file_exists($tempSqlPath)) {
+                @unlink($tempSqlPath);
+            }
 
-                        $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`");
-                        $createTableArray = (array) $createTable[0];
-                        echo $createTableArray['Create Table'].";\n\n";
+            $downloadFilename = 'backup_blogwalker_lengkap_'.date('Y-m-d_His').'.zip';
 
-                        echo "-- Dumping data for `{$tableName}`\n";
-                        $rows = DB::table($tableName)->get();
-                        foreach ($rows as $row) {
-                            $rowArray = (array) $row;
-                            $columns = array_keys($rowArray);
-                            $escapedColumns = array_map(fn ($c) => "`{$c}`", $columns);
+            return response()->download($tempZipPath, $downloadFilename, [
+                'Content-Type' => 'application/zip',
+            ])->deleteFileAfterSend(true);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Gagal membuat paket cadangan lengkap: '.$e->getMessage());
+        }
+    }
 
-                            $values = array_map(function ($val) {
-                                if (is_null($val)) {
-                                    return 'NULL';
-                                }
+    /**
+     * Restore database and uploaded files from uploaded .sql or .zip backup file.
+     */
+    public function restoreBackup(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'backup_file' => ['required', 'file', 'max:102400'], // 100MB
+        ], [
+            'backup_file.required' => 'Silakan pilih file cadangan (.sql atau .zip) terlebih dahulu.',
+            'backup_file.max' => 'Ukuran file cadangan maksimal 100 MB.',
+        ]);
 
-                                return "'".addslashes((string) $val)."'";
-                            }, array_values($rowArray));
+        $uploadedFile = $request->file('backup_file');
+        $extension = strtolower($uploadedFile->getClientOriginalExtension());
 
-                            echo 'INSERT INTO `'.$tableName.'` ('.implode(', ', $escapedColumns).') VALUES ('.implode(', ', $values).");\n";
+        if (! in_array($extension, ['sql', 'zip', 'txt'])) {
+            return back()->with('error', 'Format file tidak didukung. Harap unggah file cadangan berekstensi .sql atau .zip.');
+        }
+
+        @ini_set('memory_limit', '512M');
+        @set_time_limit(300);
+
+        try {
+            if ($extension === 'zip') {
+                if (! class_exists(ZipArchive::class)) {
+                    return back()->with('error', 'Ekstensi PHP ZipArchive tidak aktif pada server hosting ini.');
+                }
+
+                $zip = new ZipArchive();
+                if ($zip->open($uploadedFile->getRealPath()) !== true) {
+                    return back()->with('error', 'Gagal membuka file arsip ZIP cadangan.');
+                }
+
+                // 1. Restore database if database.sql exists
+                $sqlContent = $zip->getFromName('database.sql');
+                if ($sqlContent !== false && ! empty($sqlContent)) {
+                    $this->executeSqlContent($sqlContent);
+                }
+
+                // 2. Restore files to storage/app/public
+                $targetPublicPath = storage_path('app/public');
+                if (! file_exists($targetPublicPath)) {
+                    @mkdir($targetPublicPath, 0755, true);
+                }
+
+                $restoredFilesCount = 0;
+                for ($i = 0; $i < $zip->numFiles; $i++) {
+                    $entryName = $zip->getNameIndex($i);
+                    if (str_contains($entryName, '..')) {
+                        continue; // Protect against path traversal
+                    }
+
+                    if (str_starts_with($entryName, 'storage/')) {
+                        $subPath = substr($entryName, strlen('storage/'));
+                        if (! empty($subPath) && ! str_ends_with($subPath, '/')) {
+                            $targetFilePath = $targetPublicPath.'/'.$subPath;
+                            $targetDir = dirname($targetFilePath);
+                            if (! file_exists($targetDir)) {
+                                @mkdir($targetDir, 0755, true);
+                            }
+                            file_put_contents($targetFilePath, $zip->getFromIndex($i));
+                            $restoredFilesCount++;
                         }
                     }
                 }
-            }, $filename, [
-                'Content-Type' => 'application/sql',
-                'Content-Disposition' => "attachment; filename=\"{$filename}\"",
-            ]);
+
+                $zip->close();
+
+                try {
+                    Artisan::call('storage:link');
+                    Artisan::call('optimize:clear');
+                } catch (\Exception $e) {
+                    // Ignore
+                }
+
+                return back()->with('success', "Pemulihan paket lengkap berhasil! Database diperbarui dan {$restoredFilesCount} file media dipulihkan.");
+            } else {
+                $sqlContent = file_get_contents($uploadedFile->getRealPath());
+                if (empty($sqlContent)) {
+                    return back()->with('error', 'File SQL yang diunggah kosong.');
+                }
+
+                $this->executeSqlContent($sqlContent);
+
+                try {
+                    Artisan::call('optimize:clear');
+                } catch (\Exception $e) {
+                    // Ignore
+                }
+
+                return back()->with('success', 'Database berhasil dipulihkan dari file SQL!');
+            }
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal mengekspor database: '.$e->getMessage());
+            return back()->with('error', 'Gagal memulihkan cadangan: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Write complete SQL database backup to a file on disk.
+     */
+    protected function writeSqlDumpToFile(string $filePath): void
+    {
+        $handle = fopen($filePath, 'w');
+        if (! $handle) {
+            throw new \RuntimeException("Tidak dapat membuat file dump SQL di {$filePath}");
+        }
+
+        $dbDriver = config('database.default');
+
+        fwrite($handle, "-- =====================================================\n");
+        fwrite($handle, "-- Blogwalker Pro Database Backup\n");
+        fwrite($handle, "-- Waktu Backup: ".date('Y-m-d H:i:s')."\n");
+        fwrite($handle, "-- Tipe Driver : {$dbDriver}\n");
+        fwrite($handle, "-- =====================================================\n\n");
+
+        if ($dbDriver === 'sqlite') {
+            fwrite($handle, "PRAGMA foreign_keys = OFF;\n\n");
+
+            $tables = DB::select("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+            foreach ($tables as $t) {
+                $tableName = $t->name;
+                $createSql = $t->sql;
+
+                fwrite($handle, "-- -----------------------------------------------------\n");
+                fwrite($handle, "-- Struktur Tabel `{$tableName}`\n");
+                fwrite($handle, "-- -----------------------------------------------------\n");
+                fwrite($handle, "DROP TABLE IF EXISTS `{$tableName}`;\n");
+                fwrite($handle, "{$createSql};\n\n");
+
+                fwrite($handle, "-- Data Tabel `{$tableName}`\n");
+                $rows = DB::table($tableName)->get();
+                foreach ($rows as $row) {
+                    $rowArray = (array) $row;
+                    $columns = array_keys($rowArray);
+                    $escapedColumns = array_map(fn ($c) => "`{$c}`", $columns);
+                    $values = array_map(function ($val) {
+                        if (is_null($val)) {
+                            return 'NULL';
+                        }
+
+                        return "'".addslashes((string) $val)."'";
+                    }, array_values($rowArray));
+
+                    fwrite($handle, "INSERT INTO `{$tableName}` (".implode(', ', $escapedColumns).') VALUES ('.implode(', ', $values).");\n");
+                }
+                fwrite($handle, "\n");
+            }
+
+            fwrite($handle, "PRAGMA foreign_keys = ON;\n");
+        } else {
+            fwrite($handle, "SET FOREIGN_KEY_CHECKS=0;\n");
+            fwrite($handle, "SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';\n\n");
+
+            $tables = DB::select('SHOW TABLES');
+            foreach ($tables as $tableObj) {
+                $tableArray = (array) $tableObj;
+                $tableName = reset($tableArray);
+
+                fwrite($handle, "-- -----------------------------------------------------\n");
+                fwrite($handle, "-- Struktur Tabel `{$tableName}`\n");
+                fwrite($handle, "-- -----------------------------------------------------\n");
+                fwrite($handle, "DROP TABLE IF EXISTS `{$tableName}`;\n");
+
+                $createTable = DB::select("SHOW CREATE TABLE `{$tableName}`");
+                $createTableArray = (array) $createTable[0];
+                fwrite($handle, $createTableArray['Create Table'].";\n\n");
+
+                fwrite($handle, "-- Data Tabel `{$tableName}`\n");
+                $rows = DB::table($tableName)->get();
+                foreach ($rows as $row) {
+                    $rowArray = (array) $row;
+                    $columns = array_keys($rowArray);
+                    $escapedColumns = array_map(fn ($c) => "`{$c}`", $columns);
+                    $values = array_map(function ($val) {
+                        if (is_null($val)) {
+                            return 'NULL';
+                        }
+
+                        return "'".addslashes((string) $val)."'";
+                    }, array_values($rowArray));
+
+                    fwrite($handle, "INSERT INTO `{$tableName}` (".implode(', ', $escapedColumns).') VALUES ('.implode(', ', $values).");\n");
+                }
+                fwrite($handle, "\n");
+            }
+
+            fwrite($handle, "SET FOREIGN_KEY_CHECKS=1;\n");
+        }
+
+        fclose($handle);
+    }
+
+    /**
+     * Execute SQL statements safely into database.
+     */
+    protected function executeSqlContent(string $sqlContent): void
+    {
+        $dbDriver = config('database.default');
+
+        if ($dbDriver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=0;');
+        } elseif ($dbDriver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = OFF;');
+        }
+
+        DB::unprepared($sqlContent);
+
+        if ($dbDriver === 'mysql') {
+            DB::statement('SET FOREIGN_KEY_CHECKS=1;');
+        } elseif ($dbDriver === 'sqlite') {
+            DB::statement('PRAGMA foreign_keys = ON;');
         }
     }
 
