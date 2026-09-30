@@ -440,6 +440,11 @@ class DomainService
                 ]);
             }
 
+            // Sync DR if provided in submission
+            if ($domainRating !== null && ($domain->dr === null || $domainRating > $domain->dr)) {
+                $domain->update(['dr' => $domainRating]);
+            }
+
             if (! $isExemptDomain && ($domain->is_locked || $domain->url_count >= $domain->max_limit)) {
                 throw ValidationException::withMessages([
                     'target_url' => "Maaf, domain [{$rootDomain}] sudah mencapai batas maksimal {$domain->max_limit} URL dan telah dikunci.",

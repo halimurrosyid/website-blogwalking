@@ -153,6 +153,22 @@
                         <!-- Domain & URL -->
                         <td class="px-6 py-4 max-w-sm">
                             <span class="font-bold text-slate-900 block text-xs">{{ $sub->domain->root_domain }}</span>
+                            @if($sub->domain && ($sub->domain->da || $sub->domain->pa || $sub->domain->dr || $sub->domain->pr))
+                                <div class="flex items-center gap-1 mt-0.5 mb-1 flex-wrap">
+                                    @if($sub->domain->da)
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-blue-50 text-blue-700 border border-blue-200">DA {{ $sub->domain->da }}</span>
+                                    @endif
+                                    @if($sub->domain->pa)
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-cyan-50 text-cyan-700 border border-cyan-200">PA {{ $sub->domain->pa }}</span>
+                                    @endif
+                                    @if($sub->domain->dr)
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-amber-50 text-amber-800 border border-amber-200">DR {{ $sub->domain->dr }}</span>
+                                    @endif
+                                    @if($sub->domain->pr)
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-purple-50 text-purple-700 border border-purple-200">PR {{ $sub->domain->pr }}</span>
+                                    @endif
+                                </div>
+                            @endif
                             <a href="{{ $sub->target_url }}" target="_blank" class="text-xs text-slate-500 hover:text-emerald-600 hover:underline truncate block font-mono" title="{{ $sub->target_url }}">
                                 {{ $sub->target_url }}
                             </a>

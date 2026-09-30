@@ -16,6 +16,11 @@ class Domain extends Model
         'tld',
         'ip_address',
         'ip_subnet',
+        'da',
+        'pa',
+        'dr',
+        'pr',
+        'seo_updated_at',
         'url_count',
         'max_limit',
         'is_locked',
@@ -25,6 +30,10 @@ class Domain extends Model
     protected function casts(): array
     {
         return [
+            'da' => 'integer',
+            'pa' => 'integer',
+            'dr' => 'integer',
+            'seo_updated_at' => 'datetime',
             'url_count' => 'integer',
             'max_limit' => 'integer',
             'is_locked' => 'boolean',

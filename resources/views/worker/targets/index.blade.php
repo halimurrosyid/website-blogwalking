@@ -57,6 +57,20 @@
                                     Reward: Rp {{ number_format($targetReward, 0, ',', '.') }}
                                 </span>
                                 <span class="text-xs font-mono font-medium text-slate-500">{{ $myTarget->root_domain }}</span>
+                                @if($myTarget->domain && ($myTarget->domain->da || $myTarget->domain->pa || $myTarget->domain->dr || $myTarget->domain->pr))
+                                    @if($myTarget->domain->da)
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-blue-50 text-blue-700 border border-blue-200">DA {{ $myTarget->domain->da }}</span>
+                                    @endif
+                                    @if($myTarget->domain->pa)
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-cyan-50 text-cyan-700 border border-cyan-200">PA {{ $myTarget->domain->pa }}</span>
+                                    @endif
+                                    @if($myTarget->domain->dr)
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-amber-50 text-amber-800 border border-amber-200">DR {{ $myTarget->domain->dr }}</span>
+                                    @endif
+                                    @if($myTarget->domain->pr)
+                                        <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-purple-50 text-purple-700 border border-purple-200">PR {{ $myTarget->domain->pr }}</span>
+                                    @endif
+                                @endif
                             </div>
                             <div class="font-medium text-sm text-slate-900 break-all">
                                 <a href="{{ $myTarget->url }}" target="_blank" rel="noopener noreferrer" class="text-emerald-700 hover:text-emerald-900 underline flex items-center gap-1">
@@ -160,6 +174,22 @@
                                     <span class="ml-2 text-xs text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full font-medium">
                                         Slot: {{ $target->domain->remainingSlots() }}
                                     </span>
+                                @endif
+                                @if($target->domain && ($target->domain->da || $target->domain->pa || $target->domain->dr || $target->domain->pr))
+                                    <div class="flex items-center gap-1 mt-1">
+                                        @if($target->domain->da)
+                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-blue-50 text-blue-700 border border-blue-200">DA {{ $target->domain->da }}</span>
+                                        @endif
+                                        @if($target->domain->pa)
+                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-cyan-50 text-cyan-700 border border-cyan-200">PA {{ $target->domain->pa }}</span>
+                                        @endif
+                                        @if($target->domain->dr)
+                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-amber-50 text-amber-800 border border-amber-200">DR {{ $target->domain->dr }}</span>
+                                        @endif
+                                        @if($target->domain->pr)
+                                            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-purple-50 text-purple-700 border border-purple-200">PR {{ $target->domain->pr }}</span>
+                                        @endif
+                                    </div>
                                 @endif
                             </td>
                             <td class="py-3.5 px-4 max-w-[200px] text-xs">

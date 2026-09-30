@@ -12,12 +12,29 @@
     editDomainCount: 0,
     bulkQuotaModalOpen: false,
     bulkQuotaLimit: 5,
+    apiKeyModalOpen: false,
+    metricsModalOpen: false,
+    metricsDomainName: '',
+    metricsDomainAction: '',
+    metricsDa: '',
+    metricsPa: '',
+    metricsDr: '',
+    metricsPr: '',
     openEditQuota(name, action, currentLimit, count) {
         this.editDomainName = name;
         this.editDomainAction = action;
         this.editDomainLimit = currentLimit;
         this.editDomainCount = count;
         this.editModalOpen = true;
+    },
+    openEditMetrics(name, action, da, pa, dr, pr) {
+        this.metricsDomainName = name;
+        this.metricsDomainAction = action;
+        this.metricsDa = (da && da !== 'null') ? da : '';
+        this.metricsPa = (pa && pa !== 'null') ? pa : '';
+        this.metricsDr = (dr && dr !== 'null') ? dr : '';
+        this.metricsPr = (pr && pr !== 'null') ? pr : '';
+        this.metricsModalOpen = true;
     },
     toggleAll(e) {
         if (e.target.checked) {
@@ -31,24 +48,55 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900">Database Domain & Kuota URL</h1>
-            <p class="text-sm text-slate-500 mt-1">Pantau kuota maksimal URL per domain dan deteksi C-Class Subnet IP untuk mencegah risiko footprint PBN / cluster Google penalty.</p>
+            <div class="flex items-center gap-2.5">
+                <h1 class="text-2xl font-bold text-slate-900">Database Domain & Kuota URL</h1>
+                <div class="flex items-center gap-1 text-[11px] font-semibold">
+                    <span class="px-2 py-0.5 rounded-full {{ $seoProviders['moz'] ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500' }}" title="{{ $seoProviders['moz'] ? 'Moz API Aktif' : 'Moz API belum diisi' }}">
+                        Moz: {{ $seoProviders['moz'] ? '● Aktif' : '○ Nonaktif' }}
+                    </span>
+                    <span class="px-2 py-0.5 rounded-full {{ $seoProviders['ahrefs'] ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500' }}" title="{{ $seoProviders['ahrefs'] ? 'Ahrefs API Aktif' : 'Ahrefs API belum diisi' }}">
+                        Ahrefs: {{ $seoProviders['ahrefs'] ? '● Aktif' : '○ Nonaktif' }}
+                    </span>
+                </div>
+            </div>
+            <p class="text-sm text-slate-500 mt-1">Pantau kuota URL, metrik otoritas SEO (DA, PA, DR, PR) resmi Moz & Ahrefs, serta deteksi subnet IP untuk cegah footprint PBN.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
+            <!-- API Key Settings Modal Trigger -->
+            <button type="button" @click="apiKeyModalOpen = true"
+                class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl {{ $hasAnyKey ? 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200' : 'bg-amber-50 hover:bg-amber-100 text-amber-800 border-amber-300 animate-pulse' }} text-xs font-bold transition border cursor-pointer">
+                <span>🔑 Pengaturan API Key SEO</span>
+                @if(! $hasAnyKey)
+                    <span class="bg-amber-500 text-white rounded-full w-2 h-2"></span>
+                @endif
+            </button>
+
+            <!-- Bulk SEO Fetch Form (for selected) -->
+            <form method="POST" action="{{ route('admin.domains.bulk-fetch-seo') }}" x-show="selectedIds.length > 0" x-cloak
+                onsubmit="return confirm('Mulai pengecekan metrik SEO otomatis (DA/PA/DR/PR) untuk domain terpilih?')">
+                @csrf
+                <template x-for="id in selectedIds" :key="id">
+                    <input type="hidden" name="domain_ids[]" :value="id">
+                </template>
+                <button type="submit" class="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                    <span>⚡ Cek SEO Terpilih (<span x-text="selectedIds.length"></span>)</span>
+                </button>
+            </form>
+
             <!-- Refresh DNS & Subnet Button -->
             <form method="POST" action="{{ route('admin.domains.refresh-subnets') }}">
                 @csrf
-                <button type="submit" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition border border-slate-200 cursor-pointer" title="Resolve DNS IP & Subnet C-Class untuk domain yang belum terdeteksi">
+                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition border border-slate-200 cursor-pointer" title="Resolve DNS IP & Subnet C-Class untuk domain yang belum terdeteksi">
                     <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                    <span>Deteksi Ulang IP / Subnet</span>
+                    <span>IP / Subnet</span>
                 </button>
             </form>
 
             <!-- Bulk Quota Button -->
             <button type="button" @click="bulkQuotaModalOpen = true" x-show="selectedIds.length > 0" x-cloak
                 class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer">
-                <span>⚙️ Atur Kuota Terpilih (<span x-text="selectedIds.length"></span>)</span>
+                <span>⚙️ Kuota Terpilih (<span x-text="selectedIds.length"></span>)</span>
             </button>
 
             <!-- Bulk Reset Form -->
@@ -58,8 +106,8 @@
                 <template x-for="id in selectedIds" :key="id">
                     <input type="hidden" name="domain_ids[]" :value="id">
                 </template>
-                <button type="submit" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-2 cursor-pointer">
-                    <span>🔄 Reset Kuota (<span x-text="selectedIds.length"></span>)</span>
+                <button type="submit" class="px-3 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                    <span>🔄 Reset (<span x-text="selectedIds.length"></span>)</span>
                 </button>
             </form>
         </div>
@@ -124,6 +172,7 @@
                         </th>
                         <th class="px-6 py-3.5">Nama Root Domain</th>
                         <th class="px-6 py-3.5">IP Address & Subnet C-Class</th>
+                        <th class="px-6 py-3.5">Metrik SEO</th>
                         <th class="px-6 py-3.5">Ekstensi (TLD)</th>
                         <th class="px-6 py-3.5">Penggunaan Kuota (URL)</th>
                         <th class="px-6 py-3.5">Status</th>
@@ -157,6 +206,31 @@
                                 </div>
                             @else
                                 <span class="text-xs text-slate-400 italic">Belum terdeteksi</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->da ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-slate-100 text-slate-400' }}" title="Moz Domain Authority (1-100)">
+                                    DA {{ $domain->da ?? '-' }}
+                                </span>
+                                <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->pa ? 'bg-cyan-100 text-cyan-800 border border-cyan-200' : 'bg-slate-100 text-slate-400' }}" title="Moz Page Authority (1-100)">
+                                    PA {{ $domain->pa ?? '-' }}
+                                </span>
+                                <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->dr ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-400' }}" title="Ahrefs Domain Rating (1-100)">
+                                    DR {{ $domain->dr ?? '-' }}
+                                </span>
+                                <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->pr ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-400' }}" title="PageRank / Score">
+                                    PR {{ $domain->pr ?? '-' }}
+                                </span>
+                                <button type="button" 
+                                    @click="openEditMetrics('{{ $domain->root_domain }}', '{{ route('admin.domains.metrics', $domain) }}', '{{ $domain->da }}', '{{ $domain->pa }}', '{{ $domain->dr }}', '{{ $domain->pr }}')"
+                                    class="text-xs text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition cursor-pointer" 
+                                    title="Edit manual nilai DA, PA, DR, PR">
+                                    ✏️
+                                </button>
+                            </div>
+                            @if($domain->seo_updated_at)
+                                <div class="text-[10px] text-slate-400 mt-1">Cek: {{ $domain->seo_updated_at->diffForHumans() }}</div>
                             @endif
                         </td>
                         <td class="px-6 py-4">
@@ -193,18 +267,24 @@
                         </td>
                         <td class="px-6 py-4 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-1.5">
+                                <form method="POST" action="{{ route('admin.domains.fetch-seo', $domain) }}">
+                                    @csrf
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold text-xs transition cursor-pointer" title="Cek otomatis DA, PA, DR, PR ke API resmi">
+                                        ⚡ Cek SEO
+                                    </button>
+                                </form>
                                 <button type="button" 
                                     @click="openEditQuota('{{ $domain->root_domain }}', '{{ route('admin.domains.quota', $domain) }}', {{ $domain->max_limit }}, {{ $domain->url_count }})"
                                     class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold text-xs transition cursor-pointer">
-                                    ⚙️ Atur Kuota
+                                    ⚙️ Kuota
                                 </button>
                                 <a href="{{ route('admin.domains.show', $domain) }}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
-                                    Lihat URL ({{ $domain->submissions_count }})
+                                    URL ({{ $domain->submissions_count }})
                                 </a>
                                 <form method="POST" action="{{ route('admin.domains.reset', $domain) }}" onsubmit="return confirm('Reset kuota domain {{ $domain->root_domain }} kembali ke 0?')">
                                     @csrf
-                                    <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition cursor-pointer" title="Reset hitungan URL kembali ke 0">
-                                        🔄 Reset
+                                    <button type="submit" class="px-2 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition cursor-pointer" title="Reset hitungan URL kembali ke 0">
+                                        🔄
                                     </button>
                                 </form>
                             </div>
@@ -212,7 +292,7 @@
                     </tr>
                     @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-12 text-center text-xs text-slate-400">
+                        <td colspan="9" class="px-6 py-12 text-center text-xs text-slate-400">
                             Belum ada domain yang tersimpan di sistem.
                         </td>
                     </tr>
@@ -306,6 +386,153 @@
                     </button>
                     <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs cursor-pointer">
                         Terapkan ke Semua Terpilih
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Pengaturan API Key SEO (Moz & Ahrefs) -->
+    <div x-show="apiKeyModalOpen" x-cloak class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-2xs" @click="apiKeyModalOpen = false">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4" @click.stop>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base flex items-center gap-2">
+                        <span>🔑 Pengaturan API Key SEO</span>
+                    </h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Integrasi resmi Moz & Ahrefs untuk cek otomatis nilai DA, PA, DR, dan PR.</p>
+                </div>
+                <button type="button" @click="apiKeyModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer">&times;</button>
+            </div>
+
+            <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-800 leading-relaxed">
+                ℹ️ <strong>Catatan:</strong> Fitur cek otomatis ke penyedia layanan hanya akan aktif jika Anda sudah mengisi API Key masing-masing di bawah ini.
+            </div>
+
+            <form action="{{ route('admin.domains.api-keys') }}" method="POST" class="space-y-4">
+                @csrf
+
+                <!-- Ahrefs API Key (DR) -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            Ahrefs API Key (DR)
+                        </label>
+                        <span class="text-[11px] {{ $seoProviders['ahrefs'] ? 'text-emerald-700 font-bold' : 'text-slate-400' }}">
+                            {{ $seoProviders['ahrefs'] ? '✓ Tersambung' : 'Belum diisi' }}
+                        </span>
+                    </div>
+                    <input type="text" name="ahrefs_api_key" value="{{ old('ahrefs_api_key', $ahrefsKey) }}"
+                        placeholder="Contoh: ahrefs_v3_api_key_anda..."
+                        class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">
+                        Dapatkan gratis di: <em>Ahrefs Account Settings &rarr; API keys</em> (Menggunakan endpoint publik Domain Rating).
+                    </p>
+                </div>
+
+                <!-- Moz API Token (DA & PA) -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            Moz API Token / Credential (DA & PA)
+                        </label>
+                        <span class="text-[11px] {{ $seoProviders['moz'] ? 'text-emerald-700 font-bold' : 'text-slate-400' }}">
+                            {{ $seoProviders['moz'] ? '✓ Tersambung' : 'Belum diisi' }}
+                        </span>
+                    </div>
+                    <input type="text" name="moz_api_token" value="{{ old('moz_api_token', $mozToken) }}"
+                        placeholder="Contoh: moz_api_token_anda atau access_id:secret_key"
+                        class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">
+                        Dapatkan token gratis di: <em>moz.com/products/api</em> (URL Metrics API v2).
+                    </p>
+                </div>
+
+                <!-- OpenPageRank API Key (PR) -->
+                <div>
+                    <div class="flex items-center justify-between mb-1">
+                        <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                            OpenPageRank API Key (PR) <span class="text-slate-400 font-normal lowercase">(opsional)</span>
+                        </label>
+                        <span class="text-[11px] {{ $seoProviders['openpagerank'] ? 'text-emerald-700 font-bold' : 'text-slate-400' }}">
+                            {{ $seoProviders['openpagerank'] ? '✓ Tersambung' : 'Belum diisi' }}
+                        </span>
+                    </div>
+                    <input type="text" name="openpagerank_api_key" value="{{ old('openpagerank_api_key', $oprKey) }}"
+                        placeholder="Contoh: opr_api_key_anda..."
+                        class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">
+                        Dapatkan gratis di: <em>openpagerank.com</em> (300.000 cek PageRank gratis/bulan).
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" @click="apiKeyModalOpen = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
+                        Tutup
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-900 hover:bg-slate-800 text-white shadow-xs cursor-pointer">
+                        Simpan Pengaturan API
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Ubah Manual Metrik SEO -->
+    <div x-show="metricsModalOpen" x-cloak class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-2xs" @click="metricsModalOpen = false">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4" @click.stop>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Edit Metrik SEO Domain</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Ubah nilai otoritas DA, PA, DR, dan PR untuk domain ini secara manual.</p>
+                </div>
+                <button type="button" @click="metricsModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer">&times;</button>
+            </div>
+
+            <form :action="metricsDomainAction" method="POST" class="space-y-4">
+                @csrf
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
+                    <div class="text-xs text-slate-500">Domain:</div>
+                    <div class="font-bold text-sm text-slate-900 font-mono" x-text="metricsDomainName"></div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-bold text-blue-700 uppercase tracking-wider mb-1">
+                            DA (Domain Authority)
+                        </label>
+                        <input type="number" name="da" x-model="metricsDa" min="0" max="100" placeholder="0-100"
+                            class="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-cyan-700 uppercase tracking-wider mb-1">
+                            PA (Page Authority)
+                        </label>
+                        <input type="number" name="pa" x-model="metricsPa" min="0" max="100" placeholder="0-100"
+                            class="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
+                            DR (Domain Rating)
+                        </label>
+                        <input type="number" name="dr" x-model="metricsDr" min="0" max="100" placeholder="0-100"
+                            class="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-purple-700 uppercase tracking-wider mb-1">
+                            PR (PageRank / Score)
+                        </label>
+                        <input type="text" name="pr" x-model="metricsPr" maxlength="10" placeholder="e.g. 4.2"
+                            class="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button type="button" @click="metricsModalOpen = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer">
+                        Simpan Nilai Metrik
                     </button>
                 </div>
             </form>

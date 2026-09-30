@@ -149,8 +149,22 @@
                             <span class="text-xs font-bold text-emerald-700 mt-1 block">Rp {{ number_format($sub->rate_amount, 0, ',', '.') }}</span>
                         </td>
                         <td class="px-6 py-4 max-w-sm">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-1.5 flex-wrap">
                                 <span class="font-bold text-slate-900 text-xs">{{ $sub->domain->root_domain }}</span>
+                                @if($sub->domain && ($sub->domain->da || $sub->domain->pa || $sub->domain->dr || $sub->domain->pr))
+                                    @if($sub->domain->da)
+                                        <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-semibold font-mono">DA {{ $sub->domain->da }}</span>
+                                    @endif
+                                    @if($sub->domain->pa)
+                                        <span class="text-[10px] bg-cyan-100 text-cyan-800 px-1.5 py-0.5 rounded font-semibold font-mono">PA {{ $sub->domain->pa }}</span>
+                                    @endif
+                                    @if($sub->domain->dr && ! $sub->domain_rating)
+                                        <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold font-mono">DR {{ $sub->domain->dr }}</span>
+                                    @endif
+                                    @if($sub->domain->pr)
+                                        <span class="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-semibold font-mono">PR {{ $sub->domain->pr }}</span>
+                                    @endif
+                                @endif
                                 @if($sub->platform)
                                     <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-semibold">{{ $sub->platform }}</span>
                                 @endif

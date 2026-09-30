@@ -50,7 +50,7 @@ class EnsureInstalled
      */
     protected function ensureDatabaseUpToDate(): void
     {
-        $markerFile = storage_path('framework/schema_v5.migrated');
+        $markerFile = storage_path('framework/schema_v6.migrated');
 
         if (file_exists($markerFile)) {
             return;
@@ -61,6 +61,7 @@ class EnsureInstalled
             if (! Schema::hasTable('periods') ||
                 ! Schema::hasTable('app_settings') ||
                 ! Schema::hasColumn('domains', 'ip_subnet') ||
+                ! Schema::hasColumn('domains', 'da') ||
                 ! Schema::hasColumn('submissions', 'period_id') ||
                 ! Schema::hasColumn('submissions', 'task_type') ||
                 ! Schema::hasColumn('submissions', 'social_account') ||

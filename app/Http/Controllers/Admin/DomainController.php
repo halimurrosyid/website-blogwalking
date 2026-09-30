@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\Domain;
 use App\Services\DomainService;
+use App\Services\SeoMetricService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class DomainController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, SeoMetricService $seoService): View
     {
         $status = $request->input('status', 'all'); // 'all', 'locked', 'available'
         $search = $request->input('search');
@@ -54,6 +56,11 @@ class DomainController extends Controller
             'search' => $search,
             'duplicateSubnets' => $duplicateSubnets,
             'stats' => $stats,
+            'seoProviders' => $seoService->getProvidersStatus(),
+            'hasAnyKey' => $seoService->hasAnyKeyConfigured(),
+            'mozToken' => $seoService->getMozToken(),
+            'ahrefsKey' => $seoService->getAhrefsKey(),
+            'oprKey' => $seoService->getOpenPageRankKey(),
         ]);
     }
 
@@ -149,5 +156,89 @@ class DomainController extends Controller
         }
 
         return back()->with('success', "Berhasil mendeteksi dan memperbarui IP Subnet untuk {$updated} domain.");
+    }
+
+    /**
+     * Save API Keys for Moz, Ahrefs, and OpenPageRank.
+     */
+    public function saveApiKeys(Request $request): RedirectResponse
+    {
+        $request->validate([
+            'moz_api_token' => ['nullable', 'string', 'max:255'],
+            'ahrefs_api_key' => ['nullable', 'string', 'max:255'],
+            'openpagerank_api_key' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        AppSetting::set('moz_api_token', trim((string) $request->input('moz_api_token')));
+        AppSetting::set('ahrefs_api_key', trim((string) $request->input('ahrefs_api_key')));
+        AppSetting::set('openpagerank_api_key', trim((string) $request->input('openpagerank_api_key')));
+
+        return back()->with('success', 'Pengaturan API Key SEO (Moz / Ahrefs / OpenPageRank) berhasil disimpan!');
+    }
+
+    /**
+     * Fetch SEO metrics from configured APIs for a single domain.
+     */
+    public function fetchSeo(Domain $domain, SeoMetricService $seoService): RedirectResponse
+    {
+        if (! $seoService->hasAnyKeyConfigured()) {
+            return back()->withErrors(['error' => 'Fitur cek otomatis belum aktif. Super Admin wajib mengisi minimal salah satu API Key (Moz / Ahrefs) pada menu Pengaturan API Key terlebih dahulu.']);
+        }
+
+        $res = $seoService->fetchMetricsForDomain($domain);
+
+        if ($res['updated']) {
+            return back()->with('success', "Metrik SEO domain [{$domain->root_domain}] berhasil disinkronkan: DA {$domain->da}, PA {$domain->pa}, DR {$domain->dr}, PR {$domain->pr}.");
+        }
+
+        return back()->with('warning', "Pengecekan selesai, namun tidak ada perubahan data atau API tidak mengembalikan metrik untuk [{$domain->root_domain}]. Pastikan domain aktif dan API Key valid.");
+    }
+
+    /**
+     * Bulk fetch SEO metrics for selected or all domains.
+     */
+    public function bulkFetchSeo(Request $request, SeoMetricService $seoService): RedirectResponse
+    {
+        if (! $seoService->hasAnyKeyConfigured()) {
+            return back()->withErrors(['error' => 'Fitur cek otomatis belum aktif. Super Admin wajib mengisi minimal salah satu API Key (Moz / Ahrefs) pada menu Pengaturan API Key terlebih dahulu.']);
+        }
+
+        $domainIds = $request->input('domain_ids');
+        $domains = ! empty($domainIds)
+            ? Domain::whereIn('id', $domainIds)->get()
+            : Domain::take(50)->get();
+
+        $updated = 0;
+        foreach ($domains as $domain) {
+            $res = $seoService->fetchMetricsForDomain($domain);
+            if ($res['updated']) {
+                $updated++;
+            }
+        }
+
+        return back()->with('success', "Pengecekan metrik SEO selesai. {$updated} dari {$domains->count()} domain berhasil diperbarui.");
+    }
+
+    /**
+     * Update SEO metrics manually for a domain.
+     */
+    public function updateMetrics(Request $request, Domain $domain): RedirectResponse
+    {
+        $validated = $request->validate([
+            'da' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'pa' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'dr' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'pr' => ['nullable', 'string', 'max:10'],
+        ]);
+
+        $domain->update([
+            'da' => $validated['da'] ?? null,
+            'pa' => $validated['pa'] ?? null,
+            'dr' => $validated['dr'] ?? null,
+            'pr' => $validated['pr'] ?? null,
+            'seo_updated_at' => now(),
+        ]);
+
+        return back()->with('success', "Nilai metrik SEO domain [{$domain->root_domain}] berhasil disimpan.");
     }
 }
