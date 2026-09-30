@@ -280,13 +280,15 @@ class SeoMetricService
     }
 
     /**
-     * Fetch Domain Rating (DR) from Ahrefs official API if key is present.
+     * Fetch Domain Rating (DR) detailed from Ahrefs official API if key is present.
+     *
+     * @return array{dr: ?int, error: ?string}
      */
-    public function fetchAhrefsDr(string $rootDomain): ?int
+    public function fetchAhrefsDrDetailed(string $rootDomain): array
     {
         $key = $this->getAhrefsKey();
         if (! $key) {
-            return null;
+            return ['dr' => null, 'error' => null];
         }
 
         try {
@@ -299,8 +301,8 @@ class SeoMetricService
                     'date' => now()->toDateString(),
                 ]);
 
-            if (! $response->successful() && $response->status() === 404) {
-                $response = Http::timeout(8)
+            if (! $response->successful() && in_array($response->status(), [403, 404])) {
+                $fallback = Http::timeout(8)
                     ->withoutVerifying()
                     ->withToken($key)
                     ->acceptJson()
@@ -308,6 +310,10 @@ class SeoMetricService
                         'target' => $rootDomain,
                         'output' => 'json',
                     ]);
+
+                if ($fallback->successful()) {
+                    $response = $fallback;
+                }
             }
 
             if ($response->successful()) {
@@ -315,32 +321,56 @@ class SeoMetricService
                 $dr = $data['domain_rating'] ?? $data['domainRating'] ?? $data['dr'] ?? null;
 
                 if ($dr !== null && is_numeric($dr)) {
-                    return (int) round((float) $dr);
+                    return ['dr' => (int) round((float) $dr), 'error' => null];
                 }
-            } else {
-                Log::warning("Ahrefs DR API returned status {$response->status()} for {$rootDomain}: {$response->body()}");
+
+                return ['dr' => null, 'error' => 'Ahrefs tidak menemukan data DR untuk domain ini.'];
             }
+
+            $status = $response->status();
+            $data = $response->json();
+            $msg = $data['error']['message'] ?? $data['message'] ?? $response->body();
+
+            if ($status === 401) {
+                return ['dr' => null, 'error' => 'Ahrefs API Key salah atau kadaluarsa (HTTP 401 Unauthorized). Silakan cek kembali API Key di dashboard Ahrefs.'];
+            }
+
+            if ($status === 403) {
+                return ['dr' => null, 'error' => "Ahrefs API menolak (HTTP 403 Forbidden): {$msg}. Akun Ahrefs belum memiliki paket API v3."];
+            }
+
+            Log::warning("Ahrefs DR API returned status {$status} for {$rootDomain}: {$response->body()}");
+
+            return ['dr' => null, 'error' => "Ahrefs mengembalikan HTTP {$status}: {$msg}"];
         } catch (\Throwable $e) {
             Log::warning("Ahrefs DR API error for {$rootDomain}: {$e->getMessage()}");
-        }
 
-        return null;
+            return ['dr' => null, 'error' => 'Koneksi ke Ahrefs gagal: '.$e->getMessage()];
+        }
+    }
+
+    /**
+     * Fetch Domain Rating (DR) from Ahrefs official API if key is present.
+     */
+    public function fetchAhrefsDr(string $rootDomain): ?int
+    {
+        return $this->fetchAhrefsDrDetailed($rootDomain)['dr'];
     }
 
     /**
      * Fetch Domain Authority (DA) & Page Authority (PA) from Moz API v2 if token is present.
      *
-     * @return array{da: ?int, pa: ?int}
+     * @return array{da: ?int, pa: ?int, error?: ?string}
      */
     public function fetchMozMetrics(string $rootDomain): array
     {
         $token = $this->getMozToken();
         if (! $token) {
-            return ['da' => null, 'pa' => null];
+            return ['da' => null, 'pa' => null, 'error' => null];
         }
 
         try {
-            $request = Http::timeout(8)->acceptJson();
+            $request = Http::timeout(8)->withoutVerifying()->acceptJson();
 
             // Check if token is Basic Auth (access_id:secret_key) or Bearer/x-moz-token
             if (str_contains($token, ':')) {
@@ -367,30 +397,43 @@ class SeoMetricService
                         ? (int) round((float) $result['page_authority'])
                         : null;
 
-                    return ['da' => $da, 'pa' => $pa];
+                    return ['da' => $da, 'pa' => $pa, 'error' => null];
                 }
-            } else {
-                Log::warning("Moz API returned status {$response->status()} for {$rootDomain}: {$response->body()}");
             }
+
+            $status = $response->status();
+            $data = $response->json();
+            $msg = $data['error'] ?? $data['message'] ?? $response->body();
+
+            if ($status === 401) {
+                return ['da' => null, 'pa' => null, 'error' => 'Moz Token salah atau tidak valid (HTTP 401 Unauthorized). Silakan cek kembali di moz.com.'];
+            }
+
+            Log::warning("Moz API returned status {$status} for {$rootDomain}: {$response->body()}");
+
+            return ['da' => null, 'pa' => null, 'error' => "Moz mengembalikan HTTP {$status}: {$msg}"];
         } catch (\Throwable $e) {
             Log::warning("Moz API error for {$rootDomain}: {$e->getMessage()}");
-        }
 
-        return ['da' => null, 'pa' => null];
+            return ['da' => null, 'pa' => null, 'error' => 'Koneksi ke Moz gagal: '.$e->getMessage()];
+        }
     }
 
     /**
-     * Fetch PageRank (PR) from OpenPageRank API if key is present.
+     * Fetch PageRank (PR) detailed from OpenPageRank API if key is present.
+     *
+     * @return array{pr: ?string, error: ?string}
      */
-    public function fetchOpenPageRank(string $rootDomain): ?string
+    public function fetchOpenPageRankDetailed(string $rootDomain): array
     {
         $key = $this->getOpenPageRankKey();
         if (! $key) {
-            return null;
+            return ['pr' => null, 'error' => null];
         }
 
         try {
             $response = Http::timeout(8)
+                ->withoutVerifying()
                 ->withHeaders(['API-OPR' => $key])
                 ->acceptJson()
                 ->get('https://openpagerank.com/api/v1.0/getPageRank', [
@@ -402,31 +445,52 @@ class SeoMetricService
                 $item = $data['response'][0] ?? null;
 
                 if ($item && isset($item['page_rank_decimal'])) {
-                    return (string) round((float) $item['page_rank_decimal'], 1);
+                    return ['pr' => (string) round((float) $item['page_rank_decimal'], 1), 'error' => null];
                 }
 
                 if ($item && isset($item['page_rank_integer'])) {
-                    return (string) $item['page_rank_integer'];
+                    return ['pr' => (string) $item['page_rank_integer'], 'error' => null];
                 }
-            } else {
-                Log::warning("OpenPageRank API returned status {$response->status()} for {$rootDomain}: {$response->body()}");
+
+                return ['pr' => null, 'error' => 'OpenPageRank tidak menemukan data untuk domain ini.'];
             }
+
+            $status = $response->status();
+            $data = $response->json();
+            $msg = $data['error'] ?? $response->body();
+
+            if ($status === 401 || $status === 403) {
+                return ['pr' => null, 'error' => "OpenPageRank API Key ditolak (HTTP {$status}). Silakan cek kembali API Key Anda."];
+            }
+
+            Log::warning("OpenPageRank API returned status {$status} for {$rootDomain}: {$response->body()}");
+
+            return ['pr' => null, 'error' => "OpenPageRank HTTP {$status}: {$msg}"];
         } catch (\Throwable $e) {
             Log::warning("OpenPageRank API error for {$rootDomain}: {$e->getMessage()}");
-        }
 
-        return null;
+            return ['pr' => null, 'error' => 'Koneksi ke OpenPageRank gagal: '.$e->getMessage()];
+        }
+    }
+
+    /**
+     * Fetch PageRank (PR) from OpenPageRank API if key is present.
+     */
+    public function fetchOpenPageRank(string $rootDomain): ?string
+    {
+        return $this->fetchOpenPageRankDetailed($rootDomain)['pr'];
     }
 
     /**
      * Fetch all available metrics for a single domain and save them.
      *
-     * @return array{da: ?int, pa: ?int, dr: ?int, pr: ?string, updated: bool}
+     * @return array{da: ?int, pa: ?int, dr: ?int, pr: ?string, updated: bool, errors: array<string>}
      */
     public function fetchMetricsForDomain(Domain $domain): array
     {
         $rootDomain = $domain->root_domain;
         $updated = false;
+        $errors = [];
 
         // 1. Moz DA & PA
         if ($this->getMozToken()) {
@@ -439,23 +503,30 @@ class SeoMetricService
                 $domain->pa = $moz['pa'];
                 $updated = true;
             }
+            if ($moz['da'] === null && $moz['pa'] === null && ! empty($moz['error'])) {
+                $errors[] = $moz['error'];
+            }
         }
 
         // 2. Ahrefs DR
         if ($this->getAhrefsKey()) {
-            $dr = $this->fetchAhrefsDr($rootDomain);
-            if ($dr !== null) {
-                $domain->dr = $dr;
+            $ahrefs = $this->fetchAhrefsDrDetailed($rootDomain);
+            if ($ahrefs['dr'] !== null) {
+                $domain->dr = $ahrefs['dr'];
                 $updated = true;
+            } elseif (! empty($ahrefs['error'])) {
+                $errors[] = $ahrefs['error'];
             }
         }
 
         // 3. OpenPageRank PR
         if ($this->getOpenPageRankKey()) {
-            $pr = $this->fetchOpenPageRank($rootDomain);
-            if ($pr !== null) {
-                $domain->pr = $pr;
+            $opr = $this->fetchOpenPageRankDetailed($rootDomain);
+            if ($opr['pr'] !== null) {
+                $domain->pr = $opr['pr'];
                 $updated = true;
+            } elseif (! empty($opr['error'])) {
+                $errors[] = $opr['error'];
             }
         }
 
@@ -470,6 +541,7 @@ class SeoMetricService
             'dr' => $domain->dr,
             'pr' => $domain->pr,
             'updated' => $updated,
+            'errors' => $errors,
         ];
     }
 }

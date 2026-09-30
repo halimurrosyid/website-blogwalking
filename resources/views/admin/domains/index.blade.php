@@ -95,6 +95,9 @@
                     <span class="px-2 py-0.5 rounded-full {{ $seoProviders['ahrefs'] ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500' }}" title="{{ $seoProviders['ahrefs'] ? 'Ahrefs API Aktif' : 'Ahrefs API belum diisi' }}">
                         Ahrefs: {{ $seoProviders['ahrefs'] ? '● Aktif' : '○ Nonaktif' }}
                     </span>
+                    <span class="px-2 py-0.5 rounded-full {{ $seoProviders['openpagerank'] ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500' }}" title="{{ $seoProviders['openpagerank'] ? 'OpenPageRank API Aktif' : 'OpenPageRank API belum diisi' }}">
+                        PR: {{ $seoProviders['openpagerank'] ? '● Aktif' : '○ Nonaktif' }}
+                    </span>
                 </div>
             </div>
             <p class="text-sm text-slate-500 mt-1">Pantau kuota URL, metrik otoritas SEO (DA, PA, DR, PR) resmi Moz & Ahrefs, serta deteksi subnet IP untuk cegah footprint PBN.</p>
@@ -247,24 +250,39 @@
                             @endif
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
-                            @if(! $hasAnyKey && ! ($domain->da || $domain->pa || $domain->dr || $domain->pr))
+                            @php
+                                $showDa = $seoProviders['moz'] || $domain->da !== null;
+                                $showPa = $seoProviders['moz'] || $domain->pa !== null;
+                                $showDr = $seoProviders['ahrefs'] || $domain->dr !== null;
+                                $showPr = $seoProviders['openpagerank'] || $domain->pr !== null;
+                                $hasAnyMetric = $showDa || $showPa || $showDr || $showPr;
+                            @endphp
+                            @if(! $hasAnyMetric)
                                 <button type="button" @click="apiKeyModalOpen = true" class="text-[11px] text-amber-700 bg-amber-50 hover:bg-amber-100 px-2 py-0.5 rounded border border-amber-200 transition cursor-pointer inline-flex items-center gap-1" title="Klik untuk membuka pengaturan API Key">
                                     <span>🔑 Menunggu API Key</span>
                                 </button>
                             @else
                                 <div class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->da ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-slate-100 text-slate-400' }}" title="Moz Domain Authority (1-100)">
-                                        DA {{ $domain->da ?? '-' }}
-                                    </span>
-                                    <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->pa ? 'bg-cyan-100 text-cyan-800 border border-cyan-200' : 'bg-slate-100 text-slate-400' }}" title="Moz Page Authority (1-100)">
-                                        PA {{ $domain->pa ?? '-' }}
-                                    </span>
-                                    <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->dr ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-400' }}" title="Ahrefs Domain Rating (1-100)">
-                                        DR {{ $domain->dr ?? '-' }}
-                                    </span>
-                                    <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->pr ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-400' }}" title="PageRank / Score">
-                                        PR {{ $domain->pr ?? '-' }}
-                                    </span>
+                                    @if($showDa)
+                                        <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->da ? 'bg-blue-100 text-blue-800 border border-blue-200' : 'bg-slate-100 text-slate-400' }}" title="Moz Domain Authority (1-100)">
+                                            DA {{ $domain->da ?? '-' }}
+                                        </span>
+                                    @endif
+                                    @if($showPa)
+                                        <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->pa ? 'bg-cyan-100 text-cyan-800 border border-cyan-200' : 'bg-slate-100 text-slate-400' }}" title="Moz Page Authority (1-100)">
+                                            PA {{ $domain->pa ?? '-' }}
+                                        </span>
+                                    @endif
+                                    @if($showDr)
+                                        <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->dr ? 'bg-amber-100 text-amber-800 border border-amber-200' : 'bg-slate-100 text-slate-400' }}" title="Ahrefs Domain Rating (1-100)">
+                                            DR {{ $domain->dr ?? '-' }}
+                                        </span>
+                                    @endif
+                                    @if($showPr)
+                                        <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->pr ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-400' }}" title="PageRank / Score">
+                                            PR {{ $domain->pr ?? '-' }}
+                                        </span>
+                                    @endif
                                     <button type="button" 
                                         @click="openEditMetrics('{{ $domain->root_domain }}', '{{ route('admin.domains.metrics', $domain) }}', '{{ $domain->da }}', '{{ $domain->pa }}', '{{ $domain->dr }}', '{{ $domain->pr }}')"
                                         class="text-xs text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition cursor-pointer" 
@@ -463,7 +481,7 @@
                             Ahrefs API Key (DR)
                         </label>
                         <span class="text-[11px] {{ $seoProviders['ahrefs'] ? 'text-emerald-700 font-bold' : 'text-slate-400' }}">
-                            {{ $seoProviders['ahrefs'] ? '✓ Tersambung' : 'Belum diisi' }}
+                            {{ $seoProviders['ahrefs'] ? '✓ Tersimpan' : 'Belum diisi' }}
                         </span>
                     </div>
                     <div class="flex gap-2">
@@ -496,7 +514,7 @@
                             Moz API Token / Credential (DA & PA)
                         </label>
                         <span class="text-[11px] {{ $seoProviders['moz'] ? 'text-emerald-700 font-bold' : 'text-slate-400' }}">
-                            {{ $seoProviders['moz'] ? '✓ Tersambung' : 'Belum diisi' }}
+                            {{ $seoProviders['moz'] ? '✓ Tersimpan' : 'Belum diisi' }}
                         </span>
                     </div>
                     <div class="flex gap-2">
@@ -529,7 +547,7 @@
                             OpenPageRank API Key (PR) <span class="text-slate-400 font-normal lowercase">(opsional)</span>
                         </label>
                         <span class="text-[11px] {{ $seoProviders['openpagerank'] ? 'text-emerald-700 font-bold' : 'text-slate-400' }}">
-                            {{ $seoProviders['openpagerank'] ? '✓ Tersambung' : 'Belum diisi' }}
+                            {{ $seoProviders['openpagerank'] ? '✓ Tersimpan' : 'Belum diisi' }}
                         </span>
                     </div>
                     <div class="flex gap-2">

@@ -264,10 +264,32 @@ class DomainController extends Controller
         $res = $seoService->fetchMetricsForDomain($domain);
 
         if ($res['updated']) {
-            return back()->with('success', "Metrik SEO domain [{$domain->root_domain}] berhasil disinkronkan: DA {$domain->da}, PA {$domain->pa}, DR {$domain->dr}, PR {$domain->pr}.");
+            $parts = [];
+            if ($domain->da !== null) {
+                $parts[] = "DA {$domain->da}";
+            }
+            if ($domain->pa !== null) {
+                $parts[] = "PA {$domain->pa}";
+            }
+            if ($domain->dr !== null) {
+                $parts[] = "DR {$domain->dr}";
+            }
+            if ($domain->pr !== null) {
+                $parts[] = "PR {$domain->pr}";
+            }
+            $msg = "Metrik SEO domain [{$domain->root_domain}] berhasil disinkronkan: ".implode(', ', $parts).'.';
+            if (! empty($res['errors'])) {
+                $msg .= ' (Catatan kendala sebagian: '.implode(' | ', $res['errors']).')';
+            }
+
+            return back()->with('success', $msg);
         }
 
-        return back()->with('warning', "Pengecekan selesai, namun tidak ada perubahan data atau API tidak mengembalikan metrik untuk [{$domain->root_domain}]. Pastikan domain aktif dan API Key valid.");
+        $errMsg = ! empty($res['errors'])
+            ? "Pengecekan SEO untuk [{$domain->root_domain}] gagal: ".implode(' | ', $res['errors'])
+            : "Pengecekan selesai, namun tidak ada perubahan data atau API tidak mengembalikan metrik untuk [{$domain->root_domain}].";
+
+        return back()->with('warning', $errMsg);
     }
 
     /**
