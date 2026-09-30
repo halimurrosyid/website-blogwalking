@@ -10,16 +10,20 @@
         return this.tld;
     },
 
+    quote(s) {
+        return String.fromCharCode(34) + s + String.fromCharCode(34);
+    },
+
     get fullQuery() {
         let parts = [];
         if (this.effectiveTld && this.tld !== 'none') {
             parts.push('site:' + this.effectiveTld);
         }
         if (this.footprint) {
-            parts.push('\"' + this.footprint.trim() + '\"');
+            parts.push(this.quote(this.footprint.trim()));
         }
         if (this.keyword && this.keyword.trim()) {
-            parts.push('\"' + this.keyword.trim() + '\"');
+            parts.push(this.quote(this.keyword.trim()));
         }
         return parts.join(' ');
     },
