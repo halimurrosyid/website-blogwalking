@@ -47,6 +47,14 @@ class Submission extends Model
         ];
     }
 
+    /**
+     * Get rate amount with fallback to 750 for older records.
+     */
+    public function getRateAmountAttribute($value): float
+    {
+        return (float) ($value ?? 750);
+    }
+
     public function user()
     {
         return $this->belongsTo(User::class);

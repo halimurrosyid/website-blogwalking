@@ -76,6 +76,14 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Get default rate with fallback.
+     */
+    public function getDefaultRateAttribute($value): float
+    {
+        return (float) ($value ?? 750);
+    }
+
     public function isPendingApproval(): bool
     {
         return $this->approval_status === 'pending';
