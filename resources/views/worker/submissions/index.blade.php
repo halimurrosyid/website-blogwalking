@@ -176,6 +176,9 @@
                             @if($sub->platform)
                                 <div class="text-[10px] font-semibold text-blue-800 bg-blue-50 px-1.5 py-0.2 rounded mt-1 inline-block">{{ $sub->platform }}</div>
                             @endif
+                            @if($sub->social_account)
+                                <div class="text-[10px] font-mono font-semibold text-purple-800 bg-purple-50 px-1.5 py-0.2 rounded mt-1 inline-block">👤 @<span>{{ $sub->social_account }}</span></div>
+                            @endif
                             @if($sub->domain_rating)
                                 <div class="text-[10px] font-semibold text-amber-800 bg-amber-50 px-1.5 py-0.2 rounded mt-1 inline-block">DR {{ $sub->domain_rating }}</div>
                             @endif

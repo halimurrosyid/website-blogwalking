@@ -160,6 +160,27 @@
                 </select>
             </div>
 
+            <!-- Dynamic Field: Social Media Account / Username for Social Media Task -->
+            <div x-show="taskType === 'social_media'" x-cloak>
+                <div class="flex items-center justify-between mb-1.5">
+                    <label for="social_account" class="block text-xs font-semibold uppercase tracking-wider text-slate-700">
+                        👤 Akun / Username Medsos yang Dipakai <span class="text-rose-500">*</span>
+                    </label>
+                    <span class="text-[11px] font-medium text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
+                        Maks. 2 postingan per akun
+                    </span>
+                </div>
+                <input
+                    type="text"
+                    name="social_account"
+                    id="social_account"
+                    value="{{ old('social_account') }}"
+                    placeholder="Contoh: @budi_walker atau budi_walker"
+                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-sm"
+                >
+                <span class="text-[11px] text-slate-400 mt-1 block">Username atau profil akun medsos yang Anda gunakan untuk posting (satu akun dibatasi maks. 2 kali).</span>
+            </div>
+
             <!-- Dynamic Field: Domain Rating for Comment High DR -->
             <div x-show="taskType === 'comment_high_dr'" x-cloak>
                 <label for="domain_rating" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">

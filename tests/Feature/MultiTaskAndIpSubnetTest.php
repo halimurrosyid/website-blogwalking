@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\DomainService;
 use App\Services\TaskTypeService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 class MultiTaskAndIpSubnetTest extends TestCase
@@ -234,5 +235,42 @@ class MultiTaskAndIpSubnetTest extends TestCase
         $submission->refresh();
         $this->assertEquals('approved', $submission->review_status);
         $this->assertEquals(1000.00, (float) $submission->rate_amount);
+    }
+
+    public function test_social_media_account_limit_is_capped_at_two_submissions(): void
+    {
+        $domainService = app(DomainService::class);
+
+        // First submission with @budi_walker -> Success
+        $sub1 = $domainService->recordSubmission(
+            user: $this->worker,
+            targetUrl: 'https://x.com/budi_walker/status/123456',
+            screenshotPath: 'screenshots/test1.png',
+            taskType: TaskTypeService::SOCIAL_MEDIA,
+            socialAccount: '@budi_walker'
+        );
+
+        $this->assertEquals('budi_walker', $sub1->social_account);
+
+        // Second submission with URL format -> Success (normalized to budi_walker)
+        $sub2 = $domainService->recordSubmission(
+            user: $this->worker,
+            targetUrl: 'https://instagram.com/budi_walker/p/789',
+            screenshotPath: 'screenshots/test2.png',
+            taskType: TaskTypeService::SOCIAL_MEDIA,
+            socialAccount: 'https://instagram.com/budi_walker'
+        );
+
+        $this->assertEquals('budi_walker', $sub2->social_account);
+
+        // Third submission with same account -> Must throw ValidationException
+        $this->expectException(ValidationException::class);
+        $domainService->recordSubmission(
+            user: $this->worker,
+            targetUrl: 'https://threads.net/@budi_walker/post/999',
+            screenshotPath: 'screenshots/test3.png',
+            taskType: TaskTypeService::SOCIAL_MEDIA,
+            socialAccount: 'budi_walker'
+        );
     }
 }

@@ -129,6 +129,7 @@ class SubmissionController extends Controller
             'published_url' => ['nullable', 'string'],
             'platform' => ['nullable', 'string', 'max:50'],
             'domain_rating' => ['nullable', 'integer', 'min:0', 'max:100'],
+            'social_account' => ['nullable', 'string', 'max:100'],
             'comment_type' => ['nullable', 'in:approved_live,pending_moderation'],
             'screenshot_file' => ['nullable', 'image', 'max:5120'], // Max 5MB file upload
             'screenshot_base64' => ['nullable', 'string'], // From Ctrl+V paste
@@ -183,7 +184,8 @@ class SubmissionController extends Controller
                 $request->input('platform'),
                 $rewardAmount,
                 $request->input('domain_rating'),
-                $target?->id
+                $target?->id,
+                $request->input('social_account')
             );
 
             // If this came from a target task, link and complete it

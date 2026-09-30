@@ -50,7 +50,7 @@ class EnsureInstalled
      */
     protected function ensureDatabaseUpToDate(): void
     {
-        $markerFile = storage_path('framework/schema_v4.migrated');
+        $markerFile = storage_path('framework/schema_v5.migrated');
 
         if (file_exists($markerFile)) {
             return;
@@ -63,6 +63,7 @@ class EnsureInstalled
                 ! Schema::hasColumn('domains', 'ip_subnet') ||
                 ! Schema::hasColumn('submissions', 'period_id') ||
                 ! Schema::hasColumn('submissions', 'task_type') ||
+                ! Schema::hasColumn('submissions', 'social_account') ||
                 ! Schema::hasColumn('target_urls', 'task_type')) {
                 Artisan::call('migrate', ['--force' => true]);
             }

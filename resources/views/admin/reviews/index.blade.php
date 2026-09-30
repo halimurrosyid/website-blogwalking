@@ -154,6 +154,9 @@
                                 @if($sub->platform)
                                     <span class="text-[10px] bg-blue-100 text-blue-800 px-1.5 py-0.5 rounded font-semibold">{{ $sub->platform }}</span>
                                 @endif
+                                @if($sub->social_account)
+                                    <span class="text-[10px] bg-purple-100 text-purple-800 px-1.5 py-0.5 rounded font-semibold font-mono" title="Akun Medsos Pelaksana">👤 @<span>{{ $sub->social_account }}</span></span>
+                                @endif
                                 @if($sub->domain_rating)
                                     <span class="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-semibold">DR {{ $sub->domain_rating }}</span>
                                 @endif

@@ -18,6 +18,7 @@ class Submission extends Model
         'domain_id',
         'target_url_id',
         'task_type',
+        'social_account',
         'target_url',
         'client_url',
         'keyword',

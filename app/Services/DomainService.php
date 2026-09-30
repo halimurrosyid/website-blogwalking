@@ -239,6 +239,56 @@ class DomainService
     }
 
     /**
+     * Normalize social media username / account handle.
+     */
+    public function normalizeSocialAccount(?string $account, ?string $url = null): ?string
+    {
+        $raw = trim((string) $account);
+
+        // If not provided, try to extract from published or target URL
+        if ($raw === '' && ! empty($url)) {
+            $parsed = parse_url($url);
+            $path = trim($parsed['path'] ?? '', '/');
+            if ($path !== '') {
+                $segments = explode('/', $path);
+                $first = $segments[0] ?? '';
+                if ($first === 'in' && isset($segments[1])) {
+                    // linkedin.com/in/username
+                    $raw = $segments[1];
+                } elseif (! in_array(strtolower($first), ['p', 'reel', 'stories', 'share', 'watch', 'groups', 'hashtag'], true)) {
+                    $raw = $first;
+                }
+            }
+        }
+
+        if ($raw === '') {
+            return null;
+        }
+
+        // If input looks like a full URL
+        if (str_starts_with($raw, 'http://') || str_starts_with($raw, 'https://') || str_contains($raw, '.com/') || str_contains($raw, '.net/')) {
+            $parsed = parse_url(str_starts_with($raw, 'http') ? $raw : 'https://'.$raw);
+            $path = trim($parsed['path'] ?? '', '/');
+            if ($path !== '') {
+                $segments = explode('/', $path);
+                $first = $segments[0] ?? '';
+                if ($first === 'in' && isset($segments[1])) {
+                    $raw = $segments[1];
+                } elseif (! in_array(strtolower($first), ['p', 'reel', 'stories', 'share', 'watch', 'groups', 'hashtag'], true)) {
+                    $raw = $first;
+                }
+            }
+        }
+
+        // Strip leading @, query strings, and lowercase
+        $raw = ltrim($raw, '@');
+        $raw = preg_replace('/[?#].*$/', '', $raw);
+        $raw = strtolower(trim($raw));
+
+        return $raw !== '' ? $raw : null;
+    }
+
+    /**
      * Safely record a new submission with database lock.
      *
      * @throws ValidationException
@@ -255,7 +305,8 @@ class DomainService
         ?string $platform = null,
         ?float $rewardAmount = null,
         ?int $domainRating = null,
-        ?int $targetUrlId = null
+        ?int $targetUrlId = null,
+        ?string $socialAccount = null
     ): Submission {
         $parsed = $this->extractRootDomain($targetUrl);
 
@@ -317,6 +368,28 @@ class DomainService
         $maxDomainLimit = $activePeriod->max_urls_per_domain ?? 5;
         $isExemptDomain = in_array(strtolower($rootDomain), self::$unlimitedDomains, true) || $taskType === TaskTypeService::SOCIAL_MEDIA;
 
+        $normalizedSocialAccount = null;
+        if ($taskType === TaskTypeService::SOCIAL_MEDIA) {
+            $normalizedSocialAccount = $this->normalizeSocialAccount($socialAccount, $publishedUrl ?? $targetUrl);
+
+            if (empty($normalizedSocialAccount)) {
+                throw ValidationException::withMessages([
+                    'social_account' => 'Mohon cantumkan nama akun / handle media sosial yang digunakan.',
+                ]);
+            }
+
+            $activeSocialCount = Submission::where('task_type', TaskTypeService::SOCIAL_MEDIA)
+                ->where('social_account', $normalizedSocialAccount)
+                ->whereIn('review_status', ['pending', 'approved'])
+                ->count();
+
+            if ($activeSocialCount >= 2) {
+                throw ValidationException::withMessages([
+                    'social_account' => "Akun media sosial [@{$normalizedSocialAccount}] sudah mencapai batas maksimal 2 postingan. Silakan gunakan akun media sosial lain.",
+                ]);
+            }
+        }
+
         // Resolve rate amount
         $rateToPay = $rewardAmount ?? TaskTypeService::getRate($taskType);
         if ($rateToPay <= 0) {
@@ -340,7 +413,8 @@ class DomainService
             $tld,
             $activePeriod,
             $maxDomainLimit,
-            $isExemptDomain
+            $isExemptDomain,
+            $normalizedSocialAccount
         ) {
             // Resolve IP and Subnet
             $ipData = $this->resolveIpAndSubnet($rootDomain);
@@ -392,6 +466,7 @@ class DomainService
                 'domain_id' => $domain->id,
                 'target_url_id' => $targetUrlId,
                 'task_type' => $taskType,
+                'social_account' => $normalizedSocialAccount,
                 'target_url' => $targetUrl,
                 'client_url' => $clientUrl,
                 'keyword' => $keyword,
