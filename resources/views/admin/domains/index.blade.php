@@ -5,6 +5,20 @@
 @section('content')
 <div class="space-y-6" x-data="{
     selectedIds: [],
+    editModalOpen: false,
+    editDomainName: '',
+    editDomainAction: '',
+    editDomainLimit: 5,
+    editDomainCount: 0,
+    bulkQuotaModalOpen: false,
+    bulkQuotaLimit: 5,
+    openEditQuota(name, action, currentLimit, count) {
+        this.editDomainName = name;
+        this.editDomainAction = action;
+        this.editDomainLimit = currentLimit;
+        this.editDomainCount = count;
+        this.editModalOpen = true;
+    },
     toggleAll(e) {
         if (e.target.checked) {
             this.selectedIds = Array.from(document.querySelectorAll('.domain-checkbox')).map(el => el.value);
@@ -17,8 +31,8 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900">Master Domain & Deteksi IP Subnet</h1>
-            <p class="text-sm text-slate-500 mt-1">Pantau kuota 5 URL per domain dan deteksi C-Class Subnet IP untuk mencegah risiko footprint PBN / cluster Google penalty.</p>
+            <h1 class="text-2xl font-bold text-slate-900">Database Domain & Kuota URL</h1>
+            <p class="text-sm text-slate-500 mt-1">Pantau kuota maksimal URL per domain dan deteksi C-Class Subnet IP untuk mencegah risiko footprint PBN / cluster Google penalty.</p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
@@ -31,6 +45,12 @@
                 </button>
             </form>
 
+            <!-- Bulk Quota Button -->
+            <button type="button" @click="bulkQuotaModalOpen = true" x-show="selectedIds.length > 0" x-cloak
+                class="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                <span>⚙️ Atur Kuota Terpilih (<span x-text="selectedIds.length"></span>)</span>
+            </button>
+
             <!-- Bulk Reset Form -->
             <form method="POST" action="{{ route('admin.domains.bulk-reset') }}" x-show="selectedIds.length > 0" x-cloak
                 onsubmit="return confirm('Apakah Anda yakin ingin me-reset kuota seluruh domain terpilih kembali ke 0?')">
@@ -38,8 +58,8 @@
                 <template x-for="id in selectedIds" :key="id">
                     <input type="hidden" name="domain_ids[]" :value="id">
                 </template>
-                <button type="submit" class="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-2 cursor-pointer">
-                    <span>🔄 Reset Kuota Terpilih (<span x-text="selectedIds.length"></span>)</span>
+                <button type="submit" class="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-sm transition flex items-center gap-2 cursor-pointer">
+                    <span>🔄 Reset Kuota (<span x-text="selectedIds.length"></span>)</span>
                 </button>
             </form>
         </div>
@@ -146,13 +166,19 @@
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center gap-2">
-                                <div class="w-24 bg-slate-200 rounded-full h-2 overflow-hidden">
+                                <div class="w-20 bg-slate-200 rounded-full h-2 overflow-hidden">
                                     <div class="h-2 rounded-full {{ $domain->is_locked ? 'bg-rose-500' : 'bg-emerald-500' }}"
-                                        style="width: {{ min(100, ($domain->url_count / $domain->max_limit) * 100) }}%"></div>
+                                        style="width: {{ min(100, ($domain->url_count / max(1, $domain->max_limit)) * 100) }}%"></div>
                                 </div>
                                 <span class="font-bold text-xs {{ $domain->is_locked ? 'text-rose-600' : 'text-slate-700' }}">
                                     {{ $domain->url_count }}/{{ $domain->max_limit }}
                                 </span>
+                                <button type="button" 
+                                    @click="openEditQuota('{{ $domain->root_domain }}', '{{ route('admin.domains.quota', $domain) }}', {{ $domain->max_limit }}, {{ $domain->url_count }})"
+                                    class="text-xs text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 px-1.5 py-0.5 rounded transition cursor-pointer" 
+                                    title="Ubah batas kuota maksimal domain ini">
+                                    ✏️
+                                </button>
                             </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-xs">
@@ -166,14 +192,19 @@
                             {{ $domain->last_reset_at ? $domain->last_reset_at->format('d M Y, H:i') : '-' }}
                         </td>
                         <td class="px-6 py-4 text-right whitespace-nowrap">
-                            <div class="flex items-center justify-end gap-2">
-                                <a href="{{ route('admin.domains.show', $domain) }}" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button type="button" 
+                                    @click="openEditQuota('{{ $domain->root_domain }}', '{{ route('admin.domains.quota', $domain) }}', {{ $domain->max_limit }}, {{ $domain->url_count }})"
+                                    class="px-2.5 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold text-xs transition cursor-pointer">
+                                    ⚙️ Atur Kuota
+                                </button>
+                                <a href="{{ route('admin.domains.show', $domain) }}" class="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
                                     Lihat URL ({{ $domain->submissions_count }})
                                 </a>
                                 <form method="POST" action="{{ route('admin.domains.reset', $domain) }}" onsubmit="return confirm('Reset kuota domain {{ $domain->root_domain }} kembali ke 0?')">
                                     @csrf
-                                    <button type="submit" class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition cursor-pointer">
-                                        🔄 Reset Kuota
+                                    <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs transition cursor-pointer" title="Reset hitungan URL kembali ke 0">
+                                        🔄 Reset
                                     </button>
                                 </form>
                             </div>
@@ -195,6 +226,90 @@
                 {{ $domains->links() }}
             </div>
         @endif
+    </div>
+
+    <!-- Modal: Ubah Kuota Satuan -->
+    <div x-show="editModalOpen" x-cloak class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-2xs" @click="editModalOpen = false">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4" @click.stop>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Atur Kuota URL Domain</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Ubah batas maksimal artikel yang boleh disubmit di web ini.</p>
+                </div>
+                <button type="button" @click="editModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer">&times;</button>
+            </div>
+
+            <form :action="editDomainAction" method="POST" class="space-y-4">
+                @csrf
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80 space-y-1">
+                    <div class="text-xs text-slate-500">Nama Domain:</div>
+                    <div class="font-bold text-sm text-slate-900 font-mono" x-text="editDomainName"></div>
+                    <div class="text-xs text-slate-500 pt-1">
+                        Jumlah URL saat ini: <strong class="text-slate-800" x-text="editDomainCount"></strong> URL
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Batas Maksimal Kuota (URL) *
+                    </label>
+                    <input type="number" name="max_limit" x-model="editDomainLimit" min="1" max="5000" required
+                        class="w-full px-3.5 py-2.5 text-sm font-bold rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <p class="text-[11px] text-slate-400 mt-1">
+                        Standar default adalah 5 URL. Anda bisa menambah menjadi 10, 20, atau angka lainnya.
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" @click="editModalOpen = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer">
+                        Simpan Perubahan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Ubah Kuota Massal (Bulk) -->
+    <div x-show="bulkQuotaModalOpen" x-cloak class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-2xs" @click="bulkQuotaModalOpen = false">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4" @click.stop>
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                <div>
+                    <h3 class="font-bold text-slate-900 text-base">Atur Kuota Massal Terpilih</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Terapkan batas kuota baru ke <span class="font-bold text-slate-900" x-text="selectedIds.length"></span> domain terpilih.</p>
+                </div>
+                <button type="button" @click="bulkQuotaModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer">&times;</button>
+            </div>
+
+            <form action="{{ route('admin.domains.bulk-quota') }}" method="POST" class="space-y-4">
+                @csrf
+                <template x-for="id in selectedIds" :key="id">
+                    <input type="hidden" name="domain_ids[]" :value="id">
+                </template>
+
+                <div>
+                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                        Batas Maksimal Kuota Baru (URL) *
+                    </label>
+                    <input type="number" name="max_limit" x-model="bulkQuotaLimit" min="1" max="5000" required
+                        class="w-full px-3.5 py-2.5 text-sm font-bold rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <p class="text-[11px] text-slate-400 mt-1">
+                        Semua domain yang dicentang akan diperbarui batas maksimalnya ke angka ini.
+                    </p>
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" @click="bulkQuotaModalOpen = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs cursor-pointer">
+                        Terapkan ke Semua Terpilih
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
 
 </div>

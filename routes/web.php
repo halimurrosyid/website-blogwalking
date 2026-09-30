@@ -93,6 +93,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Domain & Quota Manager
     Route::get('/domains', [DomainController::class, 'index'])->name('domains.index');
     Route::get('/domains/{domain}', [DomainController::class, 'show'])->name('domains.show');
+    Route::post('/domains/{domain}/quota', [DomainController::class, 'updateQuota'])->name('domains.quota');
+    Route::post('/domains/bulk-quota', [DomainController::class, 'bulkUpdateQuota'])->name('domains.bulk-quota');
     Route::post('/domains/{domain}/reset', [DomainController::class, 'reset'])->name('domains.reset');
     Route::post('/domains/bulk-reset', [DomainController::class, 'bulkReset'])->name('domains.bulk-reset');
     Route::post('/domains/refresh-subnets', [DomainController::class, 'refreshSubnets'])->name('domains.refresh-subnets');

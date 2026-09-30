@@ -147,4 +147,52 @@ class DomainQuotaTest extends TestCase
         $this->assertEquals(0, $domain->url_count);
         $this->assertNotNull($domain->last_reset_at);
     }
+
+    public function test_admin_can_update_single_domain_quota(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $domain = Domain::create([
+            'root_domain' => 'techportal.id',
+            'tld' => '.id',
+            'url_count' => 5,
+            'max_limit' => 5,
+            'is_locked' => true,
+        ]);
+
+        // Increase quota from 5 to 10
+        $response = $this->actingAs($admin)->post(route('admin.domains.quota', $domain), [
+            'max_limit' => 10,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $domain->refresh();
+        $this->assertEquals(10, $domain->max_limit);
+        $this->assertFalse($domain->is_locked, 'Domain should be unlocked when max_limit > url_count');
+    }
+
+    public function test_admin_can_bulk_update_domain_quotas(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $d1 = Domain::create(['root_domain' => 'site1.id', 'tld' => '.id', 'url_count' => 2, 'max_limit' => 5, 'is_locked' => false]);
+        $d2 = Domain::create(['root_domain' => 'site2.id', 'tld' => '.id', 'url_count' => 5, 'max_limit' => 5, 'is_locked' => true]);
+
+        $response = $this->actingAs($admin)->post(route('admin.domains.bulk-quota'), [
+            'domain_ids' => [$d1->id, $d2->id],
+            'max_limit' => 8,
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHas('success');
+
+        $d1->refresh();
+        $d2->refresh();
+
+        $this->assertEquals(8, $d1->max_limit);
+        $this->assertEquals(8, $d2->max_limit);
+        $this->assertFalse($d2->is_locked);
+    }
 }

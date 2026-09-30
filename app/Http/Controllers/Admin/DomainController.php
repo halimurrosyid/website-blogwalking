@@ -93,6 +93,43 @@ class DomainController extends Controller
     }
 
     /**
+     * Update URL quota limit for a specific domain.
+     */
+    public function updateQuota(Request $request, Domain $domain): RedirectResponse
+    {
+        $validated = $request->validate([
+            'max_limit' => ['required', 'integer', 'min:1', 'max:5000'],
+        ]);
+
+        $domain->max_limit = $validated['max_limit'];
+        $domain->is_locked = $domain->url_count >= $domain->max_limit;
+        $domain->save();
+
+        return back()->with('success', "Batas kuota domain [{$domain->root_domain}] berhasil diubah menjadi {$domain->max_limit} URL.");
+    }
+
+    /**
+     * Bulk update URL quota limit for selected domains.
+     */
+    public function bulkUpdateQuota(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'domain_ids' => ['required', 'array'],
+            'domain_ids.*' => ['exists:domains,id'],
+            'max_limit' => ['required', 'integer', 'min:1', 'max:5000'],
+        ]);
+
+        $domains = Domain::whereIn('id', $validated['domain_ids'])->get();
+        foreach ($domains as $domain) {
+            $domain->max_limit = $validated['max_limit'];
+            $domain->is_locked = $domain->url_count >= $domain->max_limit;
+            $domain->save();
+        }
+
+        return back()->with('success', count($domains)." domain berhasil diubah kuotanya menjadi {$validated['max_limit']} URL.");
+    }
+
+    /**
      * Resolve and update IP and Subnet for all domains that haven't been resolved yet.
      */
     public function refreshSubnets(DomainService $domainService): RedirectResponse
