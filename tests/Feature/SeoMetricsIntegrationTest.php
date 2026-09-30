@@ -38,8 +38,14 @@ class SeoMetricsIntegrationTest extends TestCase
         ]);
     }
 
-    public function test_super_admin_can_save_api_keys(): void
+    public function test_super_admin_can_save_valid_api_keys(): void
     {
+        Http::fake([
+            'https://api.ahrefs.com/v3/*' => Http::response(['domain_rating' => 50], 200),
+            'https://lsapi.seomoz.com/v2/*' => Http::response(['results' => [['domain_authority' => 40, 'page_authority' => 30]]], 200),
+            'https://openpagerank.com/api/*' => Http::response(['response' => [['page_rank_decimal' => 5.0]]], 200),
+        ]);
+
         $response = $this->actingAs($this->admin)->post(route('admin.domains.api-keys'), [
             'ahrefs_api_key' => 'ahrefs_test_key_123',
             'moz_api_token' => 'moz_test_token_456',
@@ -55,6 +61,52 @@ class SeoMetricsIntegrationTest extends TestCase
 
         $seoService = app(SeoMetricService::class);
         $this->assertTrue($seoService->hasAnyKeyConfigured());
+    }
+
+    public function test_super_admin_cannot_save_invalid_api_keys(): void
+    {
+        Http::fake([
+            'https://api.ahrefs.com/v3/*' => Http::response(['error' => ['message' => 'Unauthorized']], 401),
+            'https://lsapi.seomoz.com/v2/*' => Http::response(['error' => 'Invalid token'], 401),
+            'https://openpagerank.com/api/*' => Http::response(['error' => 'Forbidden'], 403),
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.domains.api-keys'), [
+            'ahrefs_api_key' => 'bad_ahrefs_key',
+            'moz_api_token' => 'bad_moz_token',
+            'openpagerank_api_key' => 'bad_opr_key',
+        ]);
+
+        $response->assertRedirect();
+        $response->assertSessionHasErrors('error');
+
+        $this->assertNotEquals('bad_ahrefs_key', AppSetting::get('ahrefs_api_key'));
+        $this->assertNotEquals('bad_moz_token', AppSetting::get('moz_api_token'));
+        $this->assertNotEquals('bad_opr_key', AppSetting::get('openpagerank_api_key'));
+    }
+
+    public function test_ajax_test_api_key_endpoint(): void
+    {
+        Http::fake([
+            'https://api.ahrefs.com/v3/*' => Http::response(['domain_rating' => 45], 200),
+            'https://lsapi.seomoz.com/v2/*' => Http::response(['error' => 'Unauthorized'], 401),
+        ]);
+
+        // 1. Valid Ahrefs Key
+        $validRes = $this->actingAs($this->admin)->postJson(route('admin.domains.test-api-key'), [
+            'provider' => 'ahrefs',
+            'key' => 'valid_key_123',
+        ]);
+        $validRes->assertOk();
+        $validRes->assertJson(['success' => true]);
+
+        // 2. Invalid Moz Key
+        $invalidRes = $this->actingAs($this->admin)->postJson(route('admin.domains.test-api-key'), [
+            'provider' => 'moz',
+            'key' => 'invalid_moz_key',
+        ]);
+        $invalidRes->assertOk();
+        $invalidRes->assertJson(['success' => false]);
     }
 
     public function test_fetch_seo_blocked_if_no_api_key_configured(): void
@@ -82,7 +134,7 @@ class SeoMetricsIntegrationTest extends TestCase
         AppSetting::set('openpagerank_api_key', 'mock_opr_key');
 
         Http::fake([
-            'https://api.ahrefs.com/v3/public/domain-rating-free*' => Http::response([
+            'https://api.ahrefs.com/v3/*' => Http::response([
                 'domain_rating' => 58,
             ], 200),
             'https://lsapi.seomoz.com/v2/url_metrics*' => Http::response([

@@ -94,6 +94,192 @@ class SeoMetricService
     }
 
     /**
+     * Test an Ahrefs API Key and return validation status and message.
+     *
+     * @return array{success: bool, message: string, dr?: ?int}
+     */
+    public function testAhrefsKey(string $key): array
+    {
+        $key = trim($key);
+        if (empty($key)) {
+            return ['success' => false, 'message' => 'Ahrefs API Key tidak boleh kosong.'];
+        }
+
+        try {
+            // First try site-explorer/domain-rating
+            $response = Http::timeout(10)
+                ->withoutVerifying()
+                ->withToken($key)
+                ->acceptJson()
+                ->get('https://api.ahrefs.com/v3/site-explorer/domain-rating', [
+                    'target' => 'google.com',
+                    'date' => now()->toDateString(),
+                ]);
+
+            if (! $response->successful() && $response->status() === 404) {
+                // Fallback to public endpoint
+                $response = Http::timeout(10)
+                    ->withoutVerifying()
+                    ->withToken($key)
+                    ->acceptJson()
+                    ->get('https://api.ahrefs.com/v3/public/domain-rating-free', [
+                        'target' => 'google.com',
+                    ]);
+            }
+
+            $status = $response->status();
+            $data = $response->json();
+
+            if ($response->successful()) {
+                $dr = $data['domain_rating'] ?? $data['domainRating'] ?? $data['dr'] ?? null;
+                $drInt = $dr !== null ? (int) round((float) $dr) : null;
+
+                return [
+                    'success' => true,
+                    'message' => "Koneksi Ahrefs BERHASIL! (Test DR google.com: {$drInt})",
+                    'dr' => $drInt,
+                ];
+            }
+
+            $errorMsg = $data['error']['message'] ?? $data['message'] ?? $response->body();
+            if ($status === 403) {
+                return [
+                    'success' => false,
+                    'message' => "Ahrefs API Menolak (403 Forbidden): {$errorMsg}. Akun Ahrefs Anda belum memiliki izin/paket API v3.",
+                ];
+            }
+
+            if ($status === 401) {
+                return [
+                    'success' => false,
+                    'message' => 'Ahrefs API Key SALAH / TIDAK VALID (401 Unauthorized). Silakan cek kembali API Key di dashboard Ahrefs.',
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => "Gagal terhubung ke Ahrefs (HTTP {$status}): {$errorMsg}",
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'message' => 'Kesalahan koneksi ke server Ahrefs: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Test a Moz API Token and return validation status and message.
+     *
+     * @return array{success: bool, message: string, da?: ?int, pa?: ?int}
+     */
+    public function testMozToken(string $token): array
+    {
+        $token = trim($token);
+        if (empty($token)) {
+            return ['success' => false, 'message' => 'Moz API Token tidak boleh kosong.'];
+        }
+
+        try {
+            $request = Http::timeout(10)->withoutVerifying()->acceptJson();
+
+            if (str_contains($token, ':')) {
+                [$accessId, $secretKey] = explode(':', $token, 2);
+                $request = $request->withBasicAuth(trim($accessId), trim($secretKey));
+            } else {
+                $request = $request->withHeaders(['x-moz-token' => $token]);
+            }
+
+            $response = $request->post('https://lsapi.seomoz.com/v2/url_metrics', [
+                'targets' => ['google.com'],
+            ]);
+
+            $status = $response->status();
+            $data = $response->json();
+
+            if ($response->successful()) {
+                $result = $data['results'][0] ?? null;
+                $da = isset($result['domain_authority']) ? (int) round((float) $result['domain_authority']) : null;
+                $pa = isset($result['page_authority']) ? (int) round((float) $result['page_authority']) : null;
+
+                return [
+                    'success' => true,
+                    'message' => "Koneksi Moz BERHASIL! (Test google.com -> DA: {$da}, PA: {$pa})",
+                    'da' => $da,
+                    'pa' => $pa,
+                ];
+            }
+
+            $errorMsg = $data['error_message'] ?? $data['message'] ?? $response->body();
+            if ($status === 401 || $status === 403) {
+                return [
+                    'success' => false,
+                    'message' => "Moz Token SALAH / TIDAK VALID (HTTP {$status}): {$errorMsg}",
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => "Gagal terhubung ke Moz (HTTP {$status}): {$errorMsg}",
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'message' => 'Kesalahan koneksi ke server Moz: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Test an OpenPageRank API Key and return validation status and message.
+     *
+     * @return array{success: bool, message: string, pr?: ?string}
+     */
+    public function testOpenPageRankKey(string $key): array
+    {
+        $key = trim($key);
+        if (empty($key)) {
+            return ['success' => false, 'message' => 'OpenPageRank Key tidak boleh kosong.'];
+        }
+
+        try {
+            $response = Http::timeout(10)
+                ->withoutVerifying()
+                ->withHeaders(['API-OPR' => $key])
+                ->acceptJson()
+                ->get('https://openpagerank.com/api/v1.0/getPageRank', [
+                    'domains' => ['google.com'],
+                ]);
+
+            $status = $response->status();
+            $data = $response->json();
+
+            if ($response->successful()) {
+                $item = $data['response'][0] ?? null;
+                $pr = isset($item['page_rank_decimal']) ? (string) round((float) $item['page_rank_decimal'], 1) : ($item['page_rank_integer'] ?? '-');
+
+                return [
+                    'success' => true,
+                    'message' => "Koneksi OpenPageRank BERHASIL! (Test google.com -> PR: {$pr})",
+                    'pr' => (string) $pr,
+                ];
+            }
+
+            $errorMsg = $data['error'] ?? $response->body();
+
+            return [
+                'success' => false,
+                'message' => "Gagal terhubung ke OpenPageRank (HTTP {$status}): {$errorMsg}",
+            ];
+        } catch (\Throwable $e) {
+            return [
+                'success' => false,
+                'message' => 'Kesalahan koneksi ke OpenPageRank: '.$e->getMessage(),
+            ];
+        }
+    }
+
+    /**
      * Fetch Domain Rating (DR) from Ahrefs official API if key is present.
      */
     public function fetchAhrefsDr(string $rootDomain): ?int
@@ -105,12 +291,24 @@ class SeoMetricService
 
         try {
             $response = Http::timeout(8)
+                ->withoutVerifying()
                 ->withToken($key)
                 ->acceptJson()
-                ->get('https://api.ahrefs.com/v3/public/domain-rating-free', [
+                ->get('https://api.ahrefs.com/v3/site-explorer/domain-rating', [
                     'target' => $rootDomain,
-                    'output' => 'json',
+                    'date' => now()->toDateString(),
                 ]);
+
+            if (! $response->successful() && $response->status() === 404) {
+                $response = Http::timeout(8)
+                    ->withoutVerifying()
+                    ->withToken($key)
+                    ->acceptJson()
+                    ->get('https://api.ahrefs.com/v3/public/domain-rating-free', [
+                        'target' => $rootDomain,
+                        'output' => 'json',
+                    ]);
+            }
 
             if ($response->successful()) {
                 $data = $response->json();

@@ -99,6 +99,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/domains/bulk-reset', [DomainController::class, 'bulkReset'])->name('domains.bulk-reset');
     Route::post('/domains/refresh-subnets', [DomainController::class, 'refreshSubnets'])->name('domains.refresh-subnets');
     Route::post('/domains/api-keys', [DomainController::class, 'saveApiKeys'])->name('domains.api-keys');
+    Route::post('/domains/test-api-key', [DomainController::class, 'testApiKey'])->name('domains.test-api-key');
     Route::post('/domains/{domain}/fetch-seo', [DomainController::class, 'fetchSeo'])->name('domains.fetch-seo');
     Route::post('/domains/bulk-fetch-seo', [DomainController::class, 'bulkFetchSeo'])->name('domains.bulk-fetch-seo');
     Route::post('/domains/{domain}/metrics', [DomainController::class, 'updateMetrics'])->name('domains.metrics');

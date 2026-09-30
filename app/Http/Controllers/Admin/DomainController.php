@@ -7,6 +7,7 @@ use App\Models\AppSetting;
 use App\Models\Domain;
 use App\Services\DomainService;
 use App\Services\SeoMetricService;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -159,9 +160,9 @@ class DomainController extends Controller
     }
 
     /**
-     * Save API Keys for Moz, Ahrefs, and OpenPageRank.
+     * Save API Keys for Moz, Ahrefs, and OpenPageRank with automatic connectivity testing.
      */
-    public function saveApiKeys(Request $request): RedirectResponse
+    public function saveApiKeys(Request $request, SeoMetricService $seoService): RedirectResponse
     {
         $request->validate([
             'moz_api_token' => ['nullable', 'string', 'max:255'],
@@ -169,11 +170,86 @@ class DomainController extends Controller
             'openpagerank_api_key' => ['nullable', 'string', 'max:255'],
         ]);
 
-        AppSetting::set('moz_api_token', trim((string) $request->input('moz_api_token')));
-        AppSetting::set('ahrefs_api_key', trim((string) $request->input('ahrefs_api_key')));
-        AppSetting::set('openpagerank_api_key', trim((string) $request->input('openpagerank_api_key')));
+        $ahrefsKey = trim((string) $request->input('ahrefs_api_key'));
+        $mozToken = trim((string) $request->input('moz_api_token'));
+        $oprKey = trim((string) $request->input('openpagerank_api_key'));
 
-        return back()->with('success', 'Pengaturan API Key SEO (Moz / Ahrefs / OpenPageRank) berhasil disimpan!');
+        $errors = [];
+        $successes = [];
+
+        // 1. Test & Save Ahrefs Key
+        if ($ahrefsKey !== '') {
+            $test = $seoService->testAhrefsKey($ahrefsKey);
+            if (! $test['success']) {
+                $errors[] = $test['message'];
+            } else {
+                AppSetting::set('ahrefs_api_key', $ahrefsKey);
+                $successes[] = 'Ahrefs API Key valid & aktif!';
+            }
+        } else {
+            AppSetting::set('ahrefs_api_key', '');
+        }
+
+        // 2. Test & Save Moz Token
+        if ($mozToken !== '') {
+            $test = $seoService->testMozToken($mozToken);
+            if (! $test['success']) {
+                $errors[] = $test['message'];
+            } else {
+                AppSetting::set('moz_api_token', $mozToken);
+                $successes[] = 'Moz API Token valid & aktif!';
+            }
+        } else {
+            AppSetting::set('moz_api_token', '');
+        }
+
+        // 3. Test & Save OpenPageRank Key
+        if ($oprKey !== '') {
+            $test = $seoService->testOpenPageRankKey($oprKey);
+            if (! $test['success']) {
+                $errors[] = $test['message'];
+            } else {
+                AppSetting::set('openpagerank_api_key', $oprKey);
+                $successes[] = 'OpenPageRank Key valid & aktif!';
+            }
+        } else {
+            AppSetting::set('openpagerank_api_key', '');
+        }
+
+        if (! empty($errors)) {
+            $msg = implode(' | ', $errors);
+            if (! empty($successes)) {
+                $msg .= ' (Sebagian berhasil: '.implode(', ', $successes).')';
+            }
+
+            return back()->withInput()->withErrors(['error' => $msg]);
+        }
+
+        $summary = ! empty($successes) ? implode(' ', $successes) : 'Pengaturan API Key SEO berhasil diperbarui.';
+
+        return back()->with('success', $summary);
+    }
+
+    /**
+     * AJAX endpoint to test a specific API Key before saving.
+     */
+    public function testApiKey(Request $request, SeoMetricService $seoService): JsonResponse
+    {
+        $provider = $request->input('provider');
+        $key = trim((string) $request->input('key'));
+
+        if ($key === '') {
+            return response()->json(['success' => false, 'message' => 'Kunci API tidak boleh kosong.']);
+        }
+
+        $result = match ($provider) {
+            'ahrefs' => $seoService->testAhrefsKey($key),
+            'moz' => $seoService->testMozToken($key),
+            'openpagerank' => $seoService->testOpenPageRankKey($key),
+            default => ['success' => false, 'message' => 'Provider tidak dikenal.'],
+        };
+
+        return response()->json($result);
     }
 
     /**

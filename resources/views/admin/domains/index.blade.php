@@ -13,6 +13,44 @@
     bulkQuotaModalOpen: false,
     bulkQuotaLimit: 5,
     apiKeyModalOpen: false,
+    ahrefsKeyInput: '{{ addslashes(old('ahrefs_api_key', $ahrefsKey ?? '')) }}',
+    mozKeyInput: '{{ addslashes(old('moz_api_token', $mozToken ?? '')) }}',
+    oprKeyInput: '{{ addslashes(old('openpagerank_api_key', $oprKey ?? '')) }}',
+    testState: {
+        ahrefs: { loading: false, msg: null, success: null },
+        moz: { loading: false, msg: null, success: null },
+        openpagerank: { loading: false, msg: null, success: null }
+    },
+    async testApiKey(provider, key) {
+        if (!key || !key.trim()) {
+            this.testState[provider] = { loading: false, msg: 'Masukkan API Key terlebih dahulu untuk ditest.', success: false };
+            return;
+        }
+        this.testState[provider] = { loading: true, msg: 'Sedang menguji koneksi ke API...', success: null };
+        try {
+            const res = await fetch('{{ route('admin.domains.test-api-key') }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ provider: provider, key: key })
+            });
+            const data = await res.json();
+            this.testState[provider] = {
+                loading: false,
+                msg: data.message,
+                success: data.success
+            };
+        } catch (err) {
+            this.testState[provider] = {
+                loading: false,
+                msg: 'Gagal menghubungi server: ' + err.message,
+                success: false
+            };
+        }
+    },
     metricsModalOpen: false,
     metricsDomainName: '',
     metricsDomainAction: '',
@@ -428,9 +466,24 @@
                             {{ $seoProviders['ahrefs'] ? '✓ Tersambung' : 'Belum diisi' }}
                         </span>
                     </div>
-                    <input type="text" name="ahrefs_api_key" value="{{ old('ahrefs_api_key', $ahrefsKey) }}"
-                        placeholder="Contoh: ahrefs_v3_api_key_anda..."
-                        class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                    <div class="flex gap-2">
+                        <input type="text" name="ahrefs_api_key" x-model="ahrefsKeyInput"
+                            placeholder="Contoh: ahrefs_v3_api_key_anda..."
+                            class="flex-1 px-3.5 py-2 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <button type="button" 
+                            @click="testApiKey('ahrefs', ahrefsKeyInput)" 
+                            :disabled="testState.ahrefs.loading || !ahrefsKeyInput.trim()"
+                            class="px-3 py-2 rounded-xl text-xs font-semibold bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+                            <span x-show="!testState.ahrefs.loading">🧪 Tes Koneksi</span>
+                            <span x-show="testState.ahrefs.loading">⏳ Menguji...</span>
+                        </button>
+                    </div>
+                    <template x-if="testState.ahrefs.msg">
+                        <div class="mt-1.5 text-[11px] p-2 rounded-lg leading-tight" 
+                            :class="testState.ahrefs.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'">
+                            <span x-text="testState.ahrefs.msg"></span>
+                        </div>
+                    </template>
                     <p class="text-[11px] text-slate-500 mt-1">
                         Dapatkan gratis di: <em>Ahrefs Account Settings &rarr; API keys</em> (Menggunakan endpoint publik Domain Rating).
                     </p>
@@ -446,9 +499,24 @@
                             {{ $seoProviders['moz'] ? '✓ Tersambung' : 'Belum diisi' }}
                         </span>
                     </div>
-                    <input type="text" name="moz_api_token" value="{{ old('moz_api_token', $mozToken) }}"
-                        placeholder="Contoh: moz_api_token_anda atau access_id:secret_key"
-                        class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                    <div class="flex gap-2">
+                        <input type="text" name="moz_api_token" x-model="mozKeyInput"
+                            placeholder="Contoh: moz_api_token_anda atau access_id:secret_key"
+                            class="flex-1 px-3.5 py-2 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                        <button type="button" 
+                            @click="testApiKey('moz', mozKeyInput)" 
+                            :disabled="testState.moz.loading || !mozKeyInput.trim()"
+                            class="px-3 py-2 rounded-xl text-xs font-semibold bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+                            <span x-show="!testState.moz.loading">🧪 Tes Koneksi</span>
+                            <span x-show="testState.moz.loading">⏳ Menguji...</span>
+                        </button>
+                    </div>
+                    <template x-if="testState.moz.msg">
+                        <div class="mt-1.5 text-[11px] p-2 rounded-lg leading-tight" 
+                            :class="testState.moz.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'">
+                            <span x-text="testState.moz.msg"></span>
+                        </div>
+                    </template>
                     <p class="text-[11px] text-slate-500 mt-1">
                         Dapatkan token gratis di: <em>moz.com/products/api</em> (URL Metrics API v2).
                     </p>
@@ -464,9 +532,24 @@
                             {{ $seoProviders['openpagerank'] ? '✓ Tersambung' : 'Belum diisi' }}
                         </span>
                     </div>
-                    <input type="text" name="openpagerank_api_key" value="{{ old('openpagerank_api_key', $oprKey) }}"
-                        placeholder="Contoh: opr_api_key_anda..."
-                        class="w-full px-3.5 py-2.5 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                    <div class="flex gap-2">
+                        <input type="text" name="openpagerank_api_key" x-model="oprKeyInput"
+                            placeholder="Contoh: opr_api_key_anda..."
+                            class="flex-1 px-3.5 py-2 text-xs font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:outline-none">
+                        <button type="button" 
+                            @click="testApiKey('openpagerank', oprKeyInput)" 
+                            :disabled="testState.openpagerank.loading || !oprKeyInput.trim()"
+                            class="px-3 py-2 rounded-xl text-xs font-semibold bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap">
+                            <span x-show="!testState.openpagerank.loading">🧪 Tes Koneksi</span>
+                            <span x-show="testState.openpagerank.loading">⏳ Menguji...</span>
+                        </button>
+                    </div>
+                    <template x-if="testState.openpagerank.msg">
+                        <div class="mt-1.5 text-[11px] p-2 rounded-lg leading-tight" 
+                            :class="testState.openpagerank.success ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : 'bg-rose-50 text-rose-800 border border-rose-200'">
+                            <span x-text="testState.openpagerank.msg"></span>
+                        </div>
+                    </template>
                     <p class="text-[11px] text-slate-500 mt-1">
                         Dapatkan gratis di: <em>openpagerank.com</em> (300.000 cek PageRank gratis/bulan).
                     </p>
