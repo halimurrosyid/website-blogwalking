@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Assignment;
+use App\Models\Period;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -19,6 +21,45 @@ class ReportPageTest extends TestCase
 
         $response = $this->actingAs($admin)->get(route('admin.reports.index'));
         $response->assertStatus(200);
+    }
+
+    public function test_admin_can_view_reports_page_with_active_period_and_assignments(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'is_active' => true,
+        ]);
+
+        $worker = User::factory()->create([
+            'role' => 'blogwalker',
+            'is_active' => true,
+        ]);
+
+        $period = Period::create([
+            'name' => 'Oktober 2026',
+            'month' => 10,
+            'year' => 2026,
+            'min_target' => 100,
+            'max_urls_per_domain' => 5,
+            'status' => 'active',
+            'starts_at' => '2026-10-01',
+            'ends_at' => '2026-10-31',
+        ]);
+
+        Assignment::create([
+            'period_id' => $period->id,
+            'user_id' => $worker->id,
+            'target_keywords' => 'jasa seo website, backlink murah',
+            'target_backlink_url' => 'https://klien.com',
+            'min_target' => 100,
+            'status' => 'active',
+            'is_eligible_next_period' => true,
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($admin)->get(route('admin.reports.index'));
+        $response->assertStatus(200);
+        $response->assertSee('jasa seo website');
     }
 
     public function test_admin_can_view_periods_page(): void

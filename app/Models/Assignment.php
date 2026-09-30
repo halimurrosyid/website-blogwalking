@@ -52,6 +52,15 @@ class Assignment extends Model
         return $this->min_target ?? $this->period?->min_target ?? 100;
     }
 
+    public function getTargetKeywordsStringAttribute(): string
+    {
+        if (is_array($this->target_keywords)) {
+            return implode(', ', $this->target_keywords);
+        }
+
+        return (string) ($this->target_keywords ?? '');
+    }
+
     public function isDisqualified(): bool
     {
         return $this->status === 'disqualified' || ! $this->is_eligible_next_period;

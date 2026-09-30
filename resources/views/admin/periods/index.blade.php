@@ -58,15 +58,17 @@
                 </div>
                 <div>
                     <span class="text-xs font-semibold uppercase tracking-wider text-emerald-400">Periode Aktif Berjalan</span>
-                    <h2 class="text-2xl font-bold text-white">{{ $activePeriod->name }}</h2>
+                    <h2 class="text-2xl font-bold text-white">{{ $activePeriod?->name ?? 'Belum Ada Periode Aktif' }}</h2>
                 </div>
             </div>
             <div class="flex items-center gap-3">
                 <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                    Sisa {{ $activePeriod->remainingDays() }} Hari Lagi
+                    Sisa {{ $activePeriod ? $activePeriod->remainingDays() : 0 }} Hari Lagi
                 </span>
                 <span class="text-xs text-slate-400">
-                    {{ $activePeriod->starts_at->format('d M') }} &ndash; {{ $activePeriod->ends_at->format('d M Y') }}
+                    @if($activePeriod && $activePeriod->starts_at && $activePeriod->ends_at)
+                        {{ $activePeriod->starts_at->format('d M') }} &ndash; {{ $activePeriod->ends_at->format('d M Y') }}
+                    @endif
                 </span>
             </div>
         </div>
@@ -74,15 +76,15 @@
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 pt-5">
             <div>
                 <span class="text-xs font-medium text-slate-400 block uppercase">Target Minimal Lolos</span>
-                <span class="text-2xl font-bold text-white mt-0.5 block">{{ $activePeriod->min_target }} <span class="text-xs font-normal text-slate-400">Approved URL</span></span>
+                <span class="text-2xl font-bold text-white mt-0.5 block">{{ $activePeriod?->min_target ?? 100 }} <span class="text-xs font-normal text-slate-400">Approved URL</span></span>
             </div>
             <div>
                 <span class="text-xs font-medium text-slate-400 block uppercase">Batas URL per Domain</span>
-                <span class="text-2xl font-bold text-emerald-400 mt-0.5 block">{{ $activePeriod->max_urls_per_domain }} <span class="text-xs font-normal text-slate-400">URL / Domain</span></span>
+                <span class="text-2xl font-bold text-emerald-400 mt-0.5 block">{{ $activePeriod?->max_urls_per_domain ?? 5 }} <span class="text-xs font-normal text-slate-400">URL / Domain</span></span>
             </div>
             <div>
                 <span class="text-xs font-medium text-slate-400 block uppercase">Batas Maksimal Kuota</span>
-                <span class="text-2xl font-bold text-white mt-0.5 block">{{ $activePeriod->max_target ?: 'Tanpa Batas' }}</span>
+                <span class="text-2xl font-bold text-white mt-0.5 block">{{ $activePeriod?->max_target ?: 'Tanpa Batas' }}</span>
             </div>
             <div>
                 <span class="text-xs font-medium text-slate-400 block uppercase">Partisipan Blogwalker</span>

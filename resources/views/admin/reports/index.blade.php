@@ -58,7 +58,9 @@
                         <span class="w-2.5 h-2.5 rounded-full {{ $selectedPeriod->is_active ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400' }}"></span>
                         <span class="text-slate-600 font-medium">
                             Periode: <strong class="text-slate-900">{{ $selectedPeriod->name }}</strong>
-                            ({{ $selectedPeriod->starts_at->format('d M') }} - {{ $selectedPeriod->ends_at->format('d M Y') }})
+                            @if($selectedPeriod->starts_at && $selectedPeriod->ends_at)
+                                ({{ $selectedPeriod->starts_at->format('d M') }} - {{ $selectedPeriod->ends_at->format('d M Y') }})
+                            @endif
                         </span>
                         <span class="ml-2 px-2 py-0.5 rounded-md text-[11px] font-bold {{ $selectedPeriod->is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700' }}">
                             {{ $selectedPeriod->is_active ? 'Sedang Aktif' : 'Telah Ditutup' }}
@@ -201,7 +203,7 @@
                             </div>
                             @if($row['assignment'] && $row['assignment']->target_keywords)
                                 <div class="text-[11px] text-slate-400 mt-1 truncate max-w-xs">
-                                    Key: {{ implode(', ', $row['assignment']->target_keywords) }}
+                                    Key: {{ is_array($row['assignment']->target_keywords) ? implode(', ', $row['assignment']->target_keywords) : $row['assignment']->target_keywords }}
                                 </div>
                             @endif
                         </td>
