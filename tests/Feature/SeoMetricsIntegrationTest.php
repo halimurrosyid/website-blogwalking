@@ -174,11 +174,12 @@ class SeoMetricsIntegrationTest extends TestCase
         $this->assertNotNull($domain->seo_updated_at);
     }
 
-    public function test_super_admin_can_update_metrics_manually(): void
+    public function test_super_admin_can_update_metrics_manually_except_dr(): void
     {
         $domain = Domain::create([
             'root_domain' => 'manual-seo.com',
             'tld' => '.com',
+            'dr' => null,
             'max_limit' => 5,
         ]);
 
@@ -195,7 +196,7 @@ class SeoMetricsIntegrationTest extends TestCase
         $domain->refresh();
         $this->assertEquals(50, $domain->da);
         $this->assertEquals(40, $domain->pa);
-        $this->assertEquals(65, $domain->dr);
+        $this->assertNull($domain->dr);
         $this->assertEquals('5.0', $domain->pr);
     }
 

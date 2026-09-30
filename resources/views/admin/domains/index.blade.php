@@ -282,13 +282,14 @@
                                         <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->pr ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-400' }}" title="PageRank / Score">
                                             PR {{ $domain->pr ?? '-' }}
                                         </span>
+                                    @if($showDa || $showPa || $showPr)
+                                        <button type="button" 
+                                            @click="openEditMetrics('{{ $domain->root_domain }}', '{{ route('admin.domains.metrics', $domain) }}', '{{ $domain->da }}', '{{ $domain->pa }}', '{{ $domain->dr }}', '{{ $domain->pr }}')"
+                                            class="text-xs text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition cursor-pointer" 
+                                            title="Edit manual nilai DA, PA, PR">
+                                            ✏️
+                                        </button>
                                     @endif
-                                    <button type="button" 
-                                        @click="openEditMetrics('{{ $domain->root_domain }}', '{{ route('admin.domains.metrics', $domain) }}', '{{ $domain->da }}', '{{ $domain->pa }}', '{{ $domain->dr }}', '{{ $domain->pr }}')"
-                                        class="text-xs text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition cursor-pointer" 
-                                        title="Edit manual nilai DA, PA, DR, PR">
-                                        ✏️
-                                    </button>
                                 </div>
                                 @if($domain->seo_updated_at)
                                     <div class="text-[10px] text-slate-400 mt-1">Cek: {{ $domain->seo_updated_at->diffForHumans() }}</div>
@@ -329,7 +330,7 @@
                         </td>
                         <td class="px-6 py-4 text-right whitespace-nowrap">
                             <div class="flex items-center justify-end gap-1.5">
-                                <form method="POST" action="{{ route('admin.domains.fetch-seo', $domain) }}">
+                                <form method="POST" action="{{ route('admin.domains.fetch-seo', $domain) }}" onsubmit="const btn = this.querySelector('button'); btn.disabled = true; btn.innerHTML = '⏳ Cek...';">
                                     @csrf
                                     <button type="submit" class="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold text-xs transition cursor-pointer" title="Cek otomatis DA, PA, DR, PR ke API resmi">
                                         ⚡ Cek SEO
@@ -622,8 +623,11 @@
                         <label class="block text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
                             DR (Domain Rating)
                         </label>
-                        <input type="number" name="dr" x-model="metricsDr" min="0" max="100" placeholder="0-100"
-                            class="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-amber-500 focus:outline-none">
+                        <div class="px-3 py-2 rounded-xl border border-slate-200 bg-slate-100 text-xs font-mono font-bold text-slate-600 flex items-center justify-between">
+                            <span x-text="metricsDr ? metricsDr : 'Belum ada nilai'"></span>
+                            <span class="text-[10px] text-amber-800 font-semibold bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded">🔒 Resmi Ahrefs</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">DR dikunci dan hanya dapat diperbarui otomatis dari Ahrefs resmi.</p>
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-purple-700 uppercase tracking-wider mb-1">

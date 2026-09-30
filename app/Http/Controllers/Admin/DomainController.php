@@ -289,7 +289,7 @@ class DomainController extends Controller
             ? "Pengecekan SEO untuk [{$domain->root_domain}] gagal: ".implode(' | ', $res['errors'])
             : "Pengecekan selesai, namun tidak ada perubahan data atau API tidak mengembalikan metrik untuk [{$domain->root_domain}].";
 
-        return back()->with('warning', $errMsg);
+        return back()->with('error', $errMsg);
     }
 
     /**
@@ -318,21 +318,19 @@ class DomainController extends Controller
     }
 
     /**
-     * Update SEO metrics manually for a domain.
+     * Update SEO metrics manually for a domain (DA, PA, PR only; DR is locked to Ahrefs).
      */
     public function updateMetrics(Request $request, Domain $domain): RedirectResponse
     {
         $validated = $request->validate([
             'da' => ['nullable', 'integer', 'min:0', 'max:100'],
             'pa' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'dr' => ['nullable', 'integer', 'min:0', 'max:100'],
             'pr' => ['nullable', 'string', 'max:10'],
         ]);
 
         $domain->update([
             'da' => $validated['da'] ?? null,
             'pa' => $validated['pa'] ?? null,
-            'dr' => $validated['dr'] ?? null,
             'pr' => $validated['pr'] ?? null,
             'seo_updated_at' => now(),
         ]);
