@@ -3,6 +3,11 @@
 @section('title', 'Antrean Target Komentar')
 
 @section('content')
+@php
+    $hasMoz = \App\Services\SeoMetricService::isMozEnabled();
+    $hasAhrefs = \App\Services\SeoMetricService::isAhrefsEnabled();
+    $hasOpr = \App\Services\SeoMetricService::isOpenPageRankEnabled();
+@endphp
 <div class="space-y-6">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -57,11 +62,6 @@
                                     Reward: Rp {{ number_format($targetReward, 0, ',', '.') }}
                                 </span>
                                 <span class="text-xs font-mono font-medium text-slate-500">{{ $myTarget->root_domain }}</span>
-                                @php
-                                    $hasMoz = \App\Services\SeoMetricService::isMozEnabled();
-                                    $hasAhrefs = \App\Services\SeoMetricService::isAhrefsEnabled();
-                                    $hasOpr = \App\Services\SeoMetricService::isOpenPageRankEnabled();
-                                @endphp
                                 @if($myTarget->domain && (($hasMoz && ($myTarget->domain->da || $myTarget->domain->pa)) || ($hasAhrefs && $myTarget->domain->dr) || ($hasOpr && $myTarget->domain->pr)))
                                     @if($hasMoz && $myTarget->domain->da)
                                         <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-blue-50 text-blue-700 border border-blue-200">DA {{ $myTarget->domain->da }}</span>
