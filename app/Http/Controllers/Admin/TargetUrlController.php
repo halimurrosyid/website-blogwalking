@@ -3,18 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AppSetting;
 use App\Models\Domain;
 use App\Models\TargetUrl;
 use App\Services\DomainService;
+use App\Services\PeriodService;
 use App\Services\TaskTypeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class TargetUrlController extends Controller
 {
     public function __construct(
-        protected DomainService $domainService
+        protected DomainService $domainService,
+        protected PeriodService $periodService,
     ) {}
 
     public function index(Request $request): View
@@ -62,8 +66,12 @@ class TargetUrlController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        @ini_set('max_execution_time', '300');
+        @ini_set('memory_limit', '512M');
+
         $validated = $request->validate([
-            'urls' => 'required|string',
+            'urls' => 'nullable|string',
+            'url_file' => 'nullable|file|mimes:txt,csv,text|max:10240',
             'task_type' => 'nullable|string',
             'client_url' => 'nullable|string',
             'keyword' => 'nullable|string|max:255',
@@ -71,27 +79,42 @@ class TargetUrlController extends Controller
             'notes' => 'nullable|string|max:500',
         ]);
 
+        if (empty($validated['urls']) && ! $request->hasFile('url_file')) {
+            return back()->withErrors(['urls' => 'Silakan masukkan daftar URL atau unggah file .txt / .csv'])->withInput();
+        }
+
         $taskType = $validated['task_type'] ?? TaskTypeService::COMMENT;
         $clientUrl = ! empty($validated['client_url']) ? trim($validated['client_url']) : null;
         $rewardAmount = ! empty($validated['reward_amount']) ? (float) $validated['reward_amount'] : TaskTypeService::getRate($taskType);
 
-        $rawUrls = preg_split('/[\r\n]+/', $request->urls, -1, PREG_SPLIT_NO_EMPTY);
+        // Gather raw text from file and/or textarea
+        $rawContent = '';
+        if ($request->hasFile('url_file')) {
+            $rawContent .= file_get_contents($request->file('url_file')->getRealPath())."\n";
+        }
+        if (! empty($validated['urls'])) {
+            $rawContent .= $validated['urls'];
+        }
+
+        $rawUrls = preg_split('/[\r\n]+/', $rawContent, -1, PREG_SPLIT_NO_EMPTY);
         $importedCount = 0;
         $skippedCount = 0;
         $domainFullCount = 0;
 
-        foreach ($rawUrls as $rawUrl) {
-            $rawUrl = trim($rawUrl);
+        $seenInBatch = [];
+        $validEntries = [];
+
+        // Step 1: In-memory normalization and batch deduplication
+        foreach ($rawUrls as $line) {
+            $rawUrl = trim($line, " \t\n\r\0\x0B,\"'");
             if (empty($rawUrl)) {
                 continue;
             }
 
-            // Ensure schema prefix
             if (! preg_match('#^https?://#i', $rawUrl)) {
                 $rawUrl = 'https://'.$rawUrl;
             }
 
-            // Extract root domain
             $parsedDomain = $this->domainService->extractRootDomain($rawUrl);
             if (! $parsedDomain) {
                 $skippedCount++;
@@ -99,71 +122,186 @@ class TargetUrlController extends Controller
                 continue;
             }
 
-            $rootDomain = $parsedDomain['root_domain'];
-            $tld = $parsedDomain['tld'];
-
-            // Check if exact URL already exists in targets
-            if (TargetUrl::where('url', $rawUrl)->exists()) {
+            if (isset($seenInBatch[$rawUrl])) {
                 $skippedCount++;
 
                 continue;
             }
+            $seenInBatch[$rawUrl] = true;
 
-            // Resolve IP and Subnet for domain
-            $ipData = $this->domainService->resolveIpAndSubnet($rootDomain);
+            $validEntries[] = [
+                'url' => $rawUrl,
+                'root_domain' => $parsedDomain['root_domain'],
+                'tld' => $parsedDomain['tld'],
+            ];
+        }
 
-            // Find or create domain
-            $domain = Domain::firstOrCreate(
-                ['root_domain' => $rootDomain],
-                [
+        if (empty($validEntries)) {
+            return redirect()->route('admin.targets.index')
+                ->with('error', "Tidak ada URL valid yang ditemukan ({$skippedCount} baris dilewati karena format tidak valid).");
+        }
+
+        // Step 2: Chunked check against existing target URLs in database
+        $existingUrls = [];
+        $allUrls = array_column($validEntries, 'url');
+        foreach (array_chunk($allUrls, 1000) as $urlChunk) {
+            $found = TargetUrl::whereIn('url', $urlChunk)->pluck('url')->all();
+            foreach ($found as $u) {
+                $existingUrls[$u] = true;
+            }
+        }
+
+        $newEntries = [];
+        foreach ($validEntries as $entry) {
+            if (isset($existingUrls[$entry['url']])) {
+                $skippedCount++;
+
+                continue;
+            }
+            $newEntries[] = $entry;
+        }
+
+        if (empty($newEntries)) {
+            return redirect()->route('admin.targets.index')
+                ->with('warning', "Semua URL yang Anda masukkan sudah pernah terdaftar di antrean target ({$skippedCount} URL dilewati).");
+        }
+
+        // Step 3: Efficiently find and bulk-create missing domains (Zero synchronous DNS blocking)
+        $uniqueRootDomains = [];
+        foreach ($newEntries as $entry) {
+            $uniqueRootDomains[$entry['root_domain']] = $entry['tld'];
+        }
+
+        $existingDomains = [];
+        foreach (array_chunk(array_keys($uniqueRootDomains), 1000) as $domainChunk) {
+            $domains = Domain::whereIn('root_domain', $domainChunk)->get();
+            foreach ($domains as $d) {
+                $existingDomains[$d->root_domain] = $d;
+            }
+        }
+
+        $activePeriod = $this->periodService->getActivePeriod();
+        $defaultMaxLimit = $activePeriod?->max_urls_per_domain ?? (int) AppSetting::get('max_urls_per_domain', 5);
+
+        $now = now();
+        $domainsToInsert = [];
+        foreach ($uniqueRootDomains as $rootDomain => $tld) {
+            if (! isset($existingDomains[$rootDomain])) {
+                $domainsToInsert[] = [
+                    'root_domain' => $rootDomain,
                     'tld' => $tld,
-                    'ip_address' => $ipData['ip'],
-                    'ip_subnet' => $ipData['subnet'],
-                    'max_limit' => 5,
+                    'ip_address' => null,
+                    'ip_subnet' => null,
+                    'max_limit' => $defaultMaxLimit,
                     'url_count' => 0,
                     'is_locked' => false,
-                ]
-            );
-
-            if (empty($domain->ip_subnet) && ! empty($ipData['subnet'])) {
-                $domain->update([
-                    'ip_address' => $ipData['ip'],
-                    'ip_subnet' => $ipData['subnet'],
-                ]);
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
             }
+        }
 
-            // Determine status based on domain quota
+        if (! empty($domainsToInsert)) {
+            foreach (array_chunk($domainsToInsert, 500) as $chunk) {
+                Domain::insert($chunk);
+            }
+            // Re-fetch newly created domains to get IDs
+            $newDomainKeys = array_column($domainsToInsert, 'root_domain');
+            foreach (array_chunk($newDomainKeys, 1000) as $domainChunk) {
+                $freshDomains = Domain::whereIn('root_domain', $domainChunk)->get();
+                foreach ($freshDomains as $d) {
+                    $existingDomains[$d->root_domain] = $d;
+                }
+            }
+        }
+
+        // Step 4: Prepare batch records and bulk insert target URLs
+        $targetsToInsert = [];
+        $userId = auth()->id();
+
+        foreach ($newEntries as $entry) {
+            $domain = $existingDomains[$entry['root_domain']] ?? null;
+            $domainId = $domain?->id;
+
             $status = 'available';
-            if ($domain->is_locked || $domain->url_count >= $domain->max_limit) {
+            if ($domain && ($domain->is_locked || $domain->url_count >= $domain->max_limit)) {
                 $status = 'domain_full';
                 $domainFullCount++;
             }
 
-            TargetUrl::create([
-                'url' => $rawUrl,
+            $targetsToInsert[] = [
+                'url' => $entry['url'],
                 'task_type' => $taskType,
                 'client_url' => $clientUrl,
-                'domain_id' => $domain->id,
-                'root_domain' => $rootDomain,
+                'domain_id' => $domainId,
+                'root_domain' => $entry['root_domain'],
                 'keyword' => $validated['keyword'] ?? null,
                 'reward_amount' => $rewardAmount,
                 'notes' => $validated['notes'] ?? null,
                 'status' => $status,
-                'created_by_user_id' => auth()->id(),
-            ]);
+                'created_by_user_id' => $userId,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
 
             $importedCount++;
         }
 
-        $message = "Berhasil mengimpor {$importedCount} target URL.";
+        DB::transaction(function () use ($targetsToInsert) {
+            foreach (array_chunk($targetsToInsert, 500) as $chunk) {
+                TargetUrl::insert($chunk);
+            }
+        });
+
+        $message = "Berhasil mengimpor {$importedCount} target URL secara instan.";
         if ($skippedCount > 0) {
-            $message .= " ({$skippedCount} URL dilewati karena format tidak valid atau sudah ada).";
+            $message .= " ({$skippedCount} URL dilewati karena format tidak valid atau duplikat).";
         }
         if ($domainFullCount > 0) {
-            $message .= " ({$domainFullCount} URL masuk status 'Domain Penuh' karena batas 5 URL tercapai).";
+            $message .= " ({$domainFullCount} URL masuk status 'Domain Penuh' karena batas {$defaultMaxLimit} URL tercapai).";
         }
 
         return redirect()->route('admin.targets.index')->with('success', $message);
+    }
+
+    public function bulkAction(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'action' => ['required', 'string', 'in:delete,requeue,skip'],
+            'target_ids' => ['required', 'array', 'min:1'],
+            'target_ids.*' => ['integer', 'exists:target_urls,id'],
+        ]);
+
+        $action = $validated['action'];
+        $ids = $validated['target_ids'];
+        $count = count($ids);
+
+        switch ($action) {
+            case 'delete':
+                TargetUrl::whereIn('id', $ids)->delete();
+
+                return back()->with('success', "{$count} target URL berhasil dihapus sekaligus.");
+
+            case 'requeue':
+                TargetUrl::whereIn('id', $ids)->update([
+                    'status' => 'available',
+                    'taken_by_user_id' => null,
+                    'taken_at' => null,
+                ]);
+
+                return back()->with('success', "{$count} target URL berhasil diaktifkan kembali ke antrean siap dikerjakan.");
+
+            case 'skip':
+                TargetUrl::whereIn('id', $ids)->update([
+                    'status' => 'skipped',
+                    'notes' => 'Skip: Massal oleh Admin',
+                ]);
+
+                return back()->with('success', "{$count} target URL berhasil ditandai sebagai dilewati (skip).");
+
+            default:
+                return back()->with('error', 'Aksi massal tidak dikenali.');
+        }
     }
 
     public function requeue(TargetUrl $target): RedirectResponse

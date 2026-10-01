@@ -3,7 +3,16 @@
 @section('title', 'Pool Target URL Komentar')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-6" x-data="{
+    selectedIds: [],
+    toggleAll(e) {
+        if (e.target.checked) {
+            this.selectedIds = Array.from(document.querySelectorAll('.target-checkbox')).map(el => el.value);
+        } else {
+            this.selectedIds = [];
+        }
+    }
+}">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -71,7 +80,7 @@
                     <option value="in_progress" {{ request('status') === 'in_progress' ? 'selected' : '' }}>Sedang Dikerjakan</option>
                     <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai</option>
                     <option value="skipped" {{ request('status') === 'skipped' ? 'selected' : '' }}>Dilewati</option>
-                    <option value="domain_full" {{ request('status') === 'domain_full' ? 'selected' : '' }}>Domain Penuh (5/5)</option>
+                    <option value="domain_full" {{ request('status') === 'domain_full' ? 'selected' : '' }}>Domain Penuh</option>
                 </select>
             </div>
             <div class="flex items-center gap-2">
@@ -91,6 +100,13 @@
             <table class="w-full text-left border-collapse text-sm">
                 <thead>
                     <tr class="bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        <th class="py-3 px-3 w-10 text-center">
+                            <input type="checkbox" 
+                                @change="toggleAll($event)" 
+                                :checked="selectedIds.length > 0 && selectedIds.length === document.querySelectorAll('.target-checkbox').length" 
+                                class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer"
+                                title="Pilih Semua di Halaman Ini">
+                        </th>
                         <th class="py-3 px-4">URL Target & Klien</th>
                         <th class="py-3 px-4">Kategori & Tarif</th>
                         <th class="py-3 px-4">Root Domain & Kuota</th>
@@ -106,7 +122,13 @@
                             $taskInfo = $taskTypes[$target->task_type ?? 'comment'] ?? $taskTypes['comment'];
                             $effectiveRate = $target->getEffectiveRate();
                         @endphp
-                        <tr class="hover:bg-slate-50/70 transition">
+                        <tr class="hover:bg-slate-50/70 transition" :class="selectedIds.includes('{{ $target->id }}') ? 'bg-emerald-50/40' : ''">
+                            <td class="py-3 px-3 text-center">
+                                <input type="checkbox" 
+                                    value="{{ $target->id }}" 
+                                    x-model="selectedIds" 
+                                    class="target-checkbox w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500 cursor-pointer">
+                            </td>
                             <td class="py-3 px-4 max-w-xs">
                                 <a href="{{ $target->url }}" target="_blank" rel="noopener noreferrer" class="font-medium text-emerald-700 hover:text-emerald-900 underline flex items-center gap-1.5 truncate" title="{{ $target->url }}">
                                     <span class="truncate">{{ $target->url }}</span>
@@ -135,11 +157,11 @@
                                 <div class="font-semibold text-slate-800">{{ $target->root_domain }}</div>
                                 @if($target->domain)
                                     <div class="text-xs mt-0.5">
-                                        <span class="font-mono font-semibold {{ $target->domain->url_count >= 5 ? 'text-rose-600' : 'text-slate-600' }}">
-                                            {{ $target->domain->url_count }} / 5 URL
+                                        <span class="font-mono font-semibold {{ $target->domain->url_count >= $target->domain->max_limit ? 'text-rose-600' : 'text-slate-600' }}">
+                                            {{ $target->domain->url_count }} / {{ $target->domain->max_limit }} URL
                                         </span>
-                                        @if($target->domain->is_locked)
-                                            <span class="ml-1 text-[10px] px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded font-semibold">Terkunci</span>
+                                        @if($target->domain->is_locked || $target->domain->url_count >= $target->domain->max_limit)
+                                            <span class="ml-1 text-[10px] px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded font-semibold">Penuh</span>
                                         @endif
                                     </div>
                                 @endif
@@ -182,7 +204,7 @@
                                     </div>
                                 @elseif($target->status === 'domain_full')
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                                        Domain Penuh (5/5)
+                                        Domain Penuh
                                     </span>
                                 @endif
                             </td>
@@ -216,7 +238,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="py-12 text-center text-slate-500">
+                            <td colspan="8" class="py-12 text-center text-slate-500">
                                 <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                 <p class="font-medium text-slate-700">Belum ada target URL di dalam antrean.</p>
                                 <p class="text-xs text-slate-400 mt-1">Gunakan tombol "+ Input Target Massal" untuk memasukkan daftar website yang ingin dikomentari.</p>
@@ -232,6 +254,68 @@
                 {{ $targets->links() }}
             </div>
         @endif
+    </div>
+
+    <!-- Floating Bulk Action Toolbar -->
+    <div x-show="selectedIds.length > 0" 
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 translate-y-4"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 translate-y-0"
+         x-transition:leave-end="opacity-0 translate-y-4"
+         class="fixed bottom-6 inset-x-0 z-40 max-w-2xl mx-auto px-4"
+         x-cloak>
+        <div class="bg-slate-900 text-white rounded-2xl shadow-2xl p-3 sm:p-4 border border-slate-700 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center justify-center w-7 h-7 rounded-full bg-emerald-500 text-white font-bold text-xs" x-text="selectedIds.length"></span>
+                <span class="text-sm font-semibold text-slate-100">Target URL Dipilih</span>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+                <!-- Form Re-queue (Aktifkan ke Tersedia) -->
+                <form method="POST" action="{{ route('admin.targets.bulk-action') }}" onsubmit="return confirm('Aktifkan target yang dipilih kembali ke antrean Tersedia?')">
+                    @csrf
+                    <input type="hidden" name="action" value="requeue">
+                    <template x-for="id in selectedIds" :key="'requeue-'+id">
+                        <input type="hidden" name="target_ids[]" :value="id">
+                    </template>
+                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                        <span>Aktifkan (Ready)</span>
+                    </button>
+                </form>
+
+                <!-- Form Skip (Tandai Dilewati) -->
+                <form method="POST" action="{{ route('admin.targets.bulk-action') }}" onsubmit="return confirm('Tandai target yang dipilih sebagai Dilewati (Skip)?')">
+                    @csrf
+                    <input type="hidden" name="action" value="skip">
+                    <template x-for="id in selectedIds" :key="'skip-'+id">
+                        <input type="hidden" name="target_ids[]" :value="id">
+                    </template>
+                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        <span>Tandai Dilewati</span>
+                    </button>
+                </form>
+
+                <!-- Form Delete (Hapus Massal) -->
+                <form method="POST" action="{{ route('admin.targets.bulk-action') }}" onsubmit="return confirm('Hapus semua target URL yang dipilih secara permanen?')">
+                    @csrf
+                    <input type="hidden" name="action" value="delete">
+                    <template x-for="id in selectedIds" :key="'del-'+id">
+                        <input type="hidden" name="target_ids[]" :value="id">
+                    </template>
+                    <button type="submit" class="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold shadow-xs transition flex items-center gap-1.5">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                        <span>Hapus</span>
+                    </button>
+                </form>
+
+                <button type="button" @click="selectedIds = []" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs transition">
+                    Batal
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 @endsection

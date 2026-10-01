@@ -59,6 +59,48 @@ class TargetUrlPoolTest extends TestCase
         ]);
     }
 
+    public function test_admin_can_bulk_import_hundreds_of_target_urls_instantly(): void
+    {
+        $lines = [];
+        for ($i = 1; $i <= 300; $i++) {
+            $domainNum = ($i % 25) + 1;
+            $lines[] = "https://portalberita{$domainNum}.co.id/artikel-ke-{$i}";
+        }
+        // Include some duplicates to verify deduplication
+        $lines[] = $lines[0];
+        $lines[] = $lines[1];
+
+        $payload = [
+            'urls' => implode("\n", $lines),
+            'keyword' => 'target massal',
+        ];
+
+        $startTime = microtime(true);
+        $response = $this->actingAs($this->admin)->post(route('admin.targets.store'), $payload);
+        $elapsed = microtime(true) - $startTime;
+
+        $response->assertRedirect(route('admin.targets.index'));
+        $this->assertDatabaseCount('target_urls', 300);
+        // Ensure execution was well within typical web server timeout (typically under 5 seconds)
+        $this->assertLessThan(10.0, $elapsed);
+    }
+
+    public function test_admin_can_import_target_urls_via_uploaded_file(): void
+    {
+        $content = "https://uploadfile1.com/post-a\nhttps://uploadfile2.co.id/post-b\nhttps://uploadfile3.org/post-c";
+        $file = UploadedFile::fake()->createWithContent('daftar_url.txt', $content);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.targets.store'), [
+            'url_file' => $file,
+            'keyword' => 'file upload keyword',
+        ]);
+
+        $response->assertRedirect(route('admin.targets.index'));
+        $this->assertDatabaseHas('target_urls', ['url' => 'https://uploadfile1.com/post-a']);
+        $this->assertDatabaseHas('target_urls', ['url' => 'https://uploadfile2.co.id/post-b']);
+        $this->assertDatabaseHas('target_urls', ['url' => 'https://uploadfile3.org/post-c']);
+    }
+
     public function test_target_is_flagged_domain_full_if_domain_already_locked(): void
     {
         $domain = Domain::create([
@@ -287,5 +329,51 @@ class TargetUrlPoolTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Sisa 3 Hari Lagi!');
         $response->assertSee('Perhatian: Target Periode');
+    }
+
+    public function test_admin_can_perform_bulk_actions_on_targets(): void
+    {
+        $target1 = TargetUrl::create([
+            'url' => 'https://bulktest1.com/a',
+            'root_domain' => 'bulktest1.com',
+            'status' => 'skipped',
+        ]);
+        $target2 = TargetUrl::create([
+            'url' => 'https://bulktest2.com/b',
+            'root_domain' => 'bulktest2.com',
+            'status' => 'skipped',
+        ]);
+        $target3 = TargetUrl::create([
+            'url' => 'https://bulktest3.com/c',
+            'root_domain' => 'bulktest3.com',
+            'status' => 'available',
+        ]);
+
+        // Bulk requeue
+        $response = $this->actingAs($this->admin)->post(route('admin.targets.bulk-action'), [
+            'action' => 'requeue',
+            'target_ids' => [$target1->id, $target2->id],
+        ]);
+        $response->assertRedirect();
+        $this->assertEquals('available', $target1->fresh()->status);
+        $this->assertEquals('available', $target2->fresh()->status);
+
+        // Bulk skip
+        $response = $this->actingAs($this->admin)->post(route('admin.targets.bulk-action'), [
+            'action' => 'skip',
+            'target_ids' => [$target3->id],
+        ]);
+        $response->assertRedirect();
+        $this->assertEquals('skipped', $target3->fresh()->status);
+
+        // Bulk delete
+        $response = $this->actingAs($this->admin)->post(route('admin.targets.bulk-action'), [
+            'action' => 'delete',
+            'target_ids' => [$target1->id, $target2->id, $target3->id],
+        ]);
+        $response->assertRedirect();
+        $this->assertDatabaseMissing('target_urls', ['id' => $target1->id]);
+        $this->assertDatabaseMissing('target_urls', ['id' => $target2->id]);
+        $this->assertDatabaseMissing('target_urls', ['id' => $target3->id]);
     }
 }

@@ -39,7 +39,7 @@
 
         <!-- Domain Penuh (Locked) -->
         <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs">
-            <span class="text-[11px] font-bold text-rose-500 uppercase tracking-wider block">Domain Penuh (5/5)</span>
+            <span class="text-[11px] font-bold text-rose-500 uppercase tracking-wider block">Domain Penuh / Terkunci</span>
             <div class="text-2xl font-black text-rose-600 mt-1">{{ number_format($stats['locked_domains']) }}</div>
             <a href="{{ route('admin.domains.index', ['status' => 'locked']) }}" class="text-[11px] text-rose-600 hover:underline mt-1 block">Buka / Reset &rarr;</a>
         </div>

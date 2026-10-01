@@ -311,7 +311,7 @@
             <h2 class="text-base font-bold text-slate-900">Cek Kuota Domain (Sebelum Komentar)</h2>
         </div>
         <p class="text-xs text-slate-500 mb-4">
-            Hindari buang waktu menulis komentar di website yang sudah penuh! Masukkan URL artikel blog di bawah untuk cek sisa kuotanya (Maks. 5 URL per domain).
+            Hindari buang waktu menulis komentar di website yang sudah penuh! Masukkan URL artikel blog di bawah untuk cek sisa kuotanya (Maks. {{ $activePeriod->max_urls_per_domain ?? 5 }} URL per domain).
         </p>
 
         <form @submit.prevent="checkDomain()" class="flex flex-col sm:flex-row gap-2">
@@ -356,7 +356,7 @@
                         <div class="font-bold text-sm">DOMAIN PENUH / TIDAK BISA DIGUNAKAN!</div>
                         <div class="text-xs mt-0.5" x-text="result.message"></div>
                         <div class="text-[11px] font-mono mt-1 opacity-75">
-                            Root Domain: <b x-text="result.root_domain"></b> | Status: SUDAH MENCAPAI BATAS 5 URL
+                            Root Domain: <b x-text="result.root_domain"></b> | Status: SUDAH MENCAPAI BATAS MAKSIMAL (<span x-text="result.max_limit"></span> URL)
                         </div>
                     </div>
                 </div>

@@ -97,6 +97,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/targets', [App\Http\Controllers\Admin\TargetUrlController::class, 'index'])->name('targets.index');
     Route::get('/targets/create', [App\Http\Controllers\Admin\TargetUrlController::class, 'create'])->name('targets.create');
     Route::post('/targets', [App\Http\Controllers\Admin\TargetUrlController::class, 'store'])->name('targets.store');
+    Route::post('/targets/bulk-action', [App\Http\Controllers\Admin\TargetUrlController::class, 'bulkAction'])->name('targets.bulk-action');
     Route::post('/targets/{target}/requeue', [App\Http\Controllers\Admin\TargetUrlController::class, 'requeue'])->name('targets.requeue');
     Route::delete('/targets/{target}', [App\Http\Controllers\Admin\TargetUrlController::class, 'destroy'])->name('targets.destroy');
     Route::post('/targets/clear-completed', [App\Http\Controllers\Admin\TargetUrlController::class, 'clearCompleted'])->name('targets.clear-completed');

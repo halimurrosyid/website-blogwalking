@@ -24,11 +24,14 @@
     <div class="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-start gap-3">
         <svg class="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
         <div class="space-y-1">
-            <div class="font-semibold text-emerald-950">Aturan Otomatis Sistem:</div>
+            @php
+                $activePeriod = app(\App\Services\PeriodService::class)->getActivePeriod();
+                $maxUrlsPerDomain = $activePeriod?->max_urls_per_domain ?? 5;
+            @endphp
             <ul class="list-disc list-inside space-y-0.5 text-emerald-800">
                 <li>Satu baris untuk satu URL (misal: <code class="bg-white/80 px-1 py-0.5 rounded text-emerald-900">https://namaweb.co.id/artikel-1/</code> atau <code class="bg-white/80 px-1 py-0.5 rounded text-emerald-900">subdomain.blogspot.com/post-1</code>).</li>
                 <li>Root domain diekstrak secara cerdas (termasuk domain bertingkat seperti <code class="bg-white/80 px-1 py-0.5 rounded text-emerald-900">.co.id</code>, <code class="bg-white/80 px-1 py-0.5 rounded text-emerald-900">.web.id</code>, dll).</li>
-                <li>Sistem otomatis mendeteksi kuota 5 URL per root domain. Jika domain sudah penuh (5 URL), target akan otomatis berstatus terkunci.</li>
+                <li>Sistem otomatis mendeteksi kuota maksimal {{ $maxUrlsPerDomain }} URL per root domain (sesuai aturan periode berjalan). Jika domain sudah mencapai batas ini, target akan otomatis berstatus "Domain Penuh".</li>
                 <li>URL duplikat yang sudah pernah dimasukkan akan otomatis dilewati.</li>
             </ul>
         </div>
@@ -36,29 +39,36 @@
 
     <!-- Form -->
     <div class="bg-white rounded-xl border border-slate-200 p-6 shadow-xs">
-        <form method="POST" action="{{ route('admin.targets.store') }}" class="space-y-5">
+        <form method="POST" action="{{ route('admin.targets.store') }}" enctype="multipart/form-data" class="space-y-5">
             @csrf
 
-            <!-- Textarea URLs -->
+            <!-- Textarea & File Upload URLs -->
             <div>
                 <label for="urls" class="block text-sm font-semibold text-slate-800 mb-1">
-                    Daftar URL / Subdomain Target <span class="text-rose-500">*</span>
+                    Daftar URL / Subdomain Target
                 </label>
                 <div class="text-xs text-slate-500 mb-2">
-                    Paste daftar URL hasil pencarian atau tools Anda di sini (1 URL per baris).
+                    Paste daftar URL hasil pencarian atau tools Anda di sini (1 URL per baris). Sistem dioptimasi dengan batch processing sehingga dapat mengimpor ribuan URL secara instan tanpa timeout.
                 </div>
                 <textarea
                     id="urls"
                     name="urls"
                     rows="10"
-                    required
                     placeholder="https://contoh-web.co.id/artikel-seo-pemula/
 https://portal-berita.id/cara-menulis-artikel/
 blog-pendidikan.blogspot.com/2026/tips-belajar.html
 https://website-kuliner.com/resep-masakan-nusantara/"
                     class="w-full font-mono text-xs border-slate-300 rounded-lg p-3 focus:ring-emerald-500 focus:border-emerald-500 leading-relaxed"
                 >{{ old('urls') }}</textarea>
-                <div class="text-[11px] text-slate-400 mt-1">Bisa memuat puluhan hingga ratusan URL sekaligus.</div>
+
+                <!-- File Upload Option (.txt / .csv) -->
+                <div class="mt-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <span class="text-xs font-bold text-slate-800 block">📁 Atau Unggah File (.txt / .csv)</span>
+                        <p class="text-[11px] text-slate-500">Sangat direkomendasikan untuk memasukkan ribuan hingga puluhan ribu URL sekaligus langsung dari file teks.</p>
+                    </div>
+                    <input type="file" name="url_file" accept=".txt,.csv,text/plain" class="text-xs text-slate-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700 cursor-pointer shrink-0">
+                </div>
             </div>
 
             <!-- Kategori Tugas / Misi -->

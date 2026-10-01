@@ -105,10 +105,31 @@ class PeriodService
         AppSetting::set('default_monthly_target', $data['min_target']);
         AppSetting::set('max_urls_per_domain', $data['max_urls_per_domain']);
 
-        // Update default max_limit for all non-locked domains
-        Domain::where('is_locked', false)->update([
-            'max_limit' => (int) $data['max_urls_per_domain'],
+        $newMax = (int) $data['max_urls_per_domain'];
+
+        // Update max_limit for all domains
+        Domain::query()->update([
+            'max_limit' => $newMax,
         ]);
+
+        // Re-evaluate locked status for all domains
+        Domain::where('url_count', '>=', $newMax)->update(['is_locked' => true]);
+        Domain::where('url_count', '<', $newMax)->update(['is_locked' => false]);
+
+        // Sync target URLs status to reflect new domain quota
+        $lockedDomainIds = Domain::where('is_locked', true)->pluck('id');
+        if ($lockedDomainIds->isNotEmpty()) {
+            TargetUrl::whereIn('domain_id', $lockedDomainIds)
+                ->where('status', 'available')
+                ->update(['status' => 'domain_full']);
+        }
+
+        $unlockedDomainIds = Domain::where('is_locked', false)->pluck('id');
+        if ($unlockedDomainIds->isNotEmpty()) {
+            TargetUrl::whereIn('domain_id', $unlockedDomainIds)
+                ->where('status', 'domain_full')
+                ->update(['status' => 'available']);
+        }
     }
 
     /**
