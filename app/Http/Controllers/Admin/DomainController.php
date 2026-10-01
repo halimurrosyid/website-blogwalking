@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\AppSetting;
 use App\Models\Domain;
 use App\Services\DomainService;
+use App\Services\PeriodService;
 use App\Services\SeoMetricService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -14,12 +15,17 @@ use Illuminate\View\View;
 
 class DomainController extends Controller
 {
-    public function index(Request $request, SeoMetricService $seoService): View
+    public function index(Request $request, SeoMetricService $seoService, PeriodService $periodService): View
     {
         $status = $request->input('status', 'all'); // 'all', 'locked', 'available'
         $search = $request->input('search');
 
-        $query = Domain::query()->withCount('submissions');
+        $baseQuery = Domain::query()->where(function ($q) {
+            $q->where('url_count', '>', 0)
+                ->orWhereHas('submissions');
+        });
+
+        $query = (clone $baseQuery)->withCount('submissions');
 
         if ($status === 'locked') {
             $query->where('is_locked', true);
@@ -38,17 +44,26 @@ class DomainController extends Controller
         $domains = $query->orderByDesc('url_count')->paginate(20)->withQueryString();
 
         // Detect subnets shared by multiple domains
-        $duplicateSubnets = Domain::whereNotNull('ip_subnet')
+        $duplicateSubnets = (clone $baseQuery)
+            ->whereNotNull('ip_subnet')
             ->select('ip_subnet')
             ->groupBy('ip_subnet')
             ->havingRaw('count(*) > 1')
             ->pluck('ip_subnet')
             ->toArray();
 
+        $activePeriod = $periodService->getActivePeriod();
+        $maxUrlsPerDomain = $activePeriod?->max_urls_per_domain ?? (int) AppSetting::get('max_urls_per_domain', 5);
+
+        $totalDomains = (clone $baseQuery)->count();
+        $lockedDomains = (clone $baseQuery)->where('is_locked', true)->count();
+        $detectedSubnetsCount = (clone $baseQuery)->whereNotNull('ip_subnet')->distinct('ip_subnet')->count('ip_subnet');
+        $clusterSubnetsCount = count($duplicateSubnets);
+
         $stats = [
-            'total_domains' => Domain::count(),
-            'unique_subnets' => Domain::whereNotNull('ip_subnet')->distinct('ip_subnet')->count('ip_subnet'),
-            'cluster_subnets' => count($duplicateSubnets),
+            'total_domains' => $totalDomains,
+            'unique_subnets' => $detectedSubnetsCount,
+            'cluster_subnets' => $clusterSubnetsCount,
         ];
 
         return view('admin.domains.index', [
@@ -56,6 +71,11 @@ class DomainController extends Controller
             'currentStatus' => $status,
             'search' => $search,
             'duplicateSubnets' => $duplicateSubnets,
+            'totalDomains' => $totalDomains,
+            'lockedDomains' => $lockedDomains,
+            'detectedSubnetsCount' => $detectedSubnetsCount,
+            'clusterSubnetsCount' => $clusterSubnetsCount,
+            'maxUrlsPerDomain' => $maxUrlsPerDomain,
             'stats' => $stats,
             'seoProviders' => $seoService->getProvidersStatus(),
             'hasAnyKey' => $seoService->hasAnyKeyConfigured(),

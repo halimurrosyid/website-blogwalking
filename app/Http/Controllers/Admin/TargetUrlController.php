@@ -46,6 +46,9 @@ class TargetUrlController extends Controller
         $targets = $query->latest()->paginate(25)->withQueryString();
         $taskTypes = TaskTypeService::all();
 
+        $activePeriod = $this->periodService->getActivePeriod();
+        $maxUrlsPerDomain = $activePeriod?->max_urls_per_domain ?? (int) AppSetting::get('max_urls_per_domain', 5);
+
         $stats = [
             'total' => TargetUrl::count(),
             'available' => TargetUrl::available()->count(),
@@ -54,7 +57,7 @@ class TargetUrlController extends Controller
             'skipped' => TargetUrl::where('status', 'skipped')->count(),
         ];
 
-        return view('admin.targets.index', compact('targets', 'stats', 'taskTypes'));
+        return view('admin.targets.index', compact('targets', 'stats', 'taskTypes', 'maxUrlsPerDomain'));
     }
 
     public function create(): View
@@ -166,7 +169,7 @@ class TargetUrlController extends Controller
                 ->with('warning', "Semua URL yang Anda masukkan sudah pernah terdaftar di antrean target ({$skippedCount} URL dilewati).");
         }
 
-        // Step 3: Efficiently find and bulk-create missing domains (Zero synchronous DNS blocking)
+        // Step 3: Match with existing worked domains (DO NOT create dummy domain records for targets)
         $uniqueRootDomains = [];
         foreach ($newEntries as $entry) {
             $uniqueRootDomains[$entry['root_domain']] = $entry['tld'];
@@ -183,41 +186,10 @@ class TargetUrlController extends Controller
         $activePeriod = $this->periodService->getActivePeriod();
         $defaultMaxLimit = $activePeriod?->max_urls_per_domain ?? (int) AppSetting::get('max_urls_per_domain', 5);
 
-        $now = now();
-        $domainsToInsert = [];
-        foreach ($uniqueRootDomains as $rootDomain => $tld) {
-            if (! isset($existingDomains[$rootDomain])) {
-                $domainsToInsert[] = [
-                    'root_domain' => $rootDomain,
-                    'tld' => $tld,
-                    'ip_address' => null,
-                    'ip_subnet' => null,
-                    'max_limit' => $defaultMaxLimit,
-                    'url_count' => 0,
-                    'is_locked' => false,
-                    'created_at' => $now,
-                    'updated_at' => $now,
-                ];
-            }
-        }
-
-        if (! empty($domainsToInsert)) {
-            foreach (array_chunk($domainsToInsert, 500) as $chunk) {
-                Domain::insert($chunk);
-            }
-            // Re-fetch newly created domains to get IDs
-            $newDomainKeys = array_column($domainsToInsert, 'root_domain');
-            foreach (array_chunk($newDomainKeys, 1000) as $domainChunk) {
-                $freshDomains = Domain::whereIn('root_domain', $domainChunk)->get();
-                foreach ($freshDomains as $d) {
-                    $existingDomains[$d->root_domain] = $d;
-                }
-            }
-        }
-
         // Step 4: Prepare batch records and bulk insert target URLs
         $targetsToInsert = [];
         $userId = auth()->id();
+        $now = now();
 
         foreach ($newEntries as $entry) {
             $domain = $existingDomains[$entry['root_domain']] ?? null;

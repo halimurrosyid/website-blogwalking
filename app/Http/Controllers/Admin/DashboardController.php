@@ -15,8 +15,12 @@ class DashboardController extends Controller
     {
         $stats = [
             'total_workers' => User::whereIn('role', ['blogwalker', 'worker'])->where('is_active', true)->count(),
-            'total_domains' => Domain::count(),
-            'locked_domains' => Domain::where('is_locked', true)->count(),
+            'total_domains' => Domain::where(function ($q) {
+                $q->where('url_count', '>', 0)->orWhereHas('submissions');
+            })->count(),
+            'locked_domains' => Domain::where('is_locked', true)->where(function ($q) {
+                $q->where('url_count', '>', 0)->orWhereHas('submissions');
+            })->count(),
             'pending_reviews' => Submission::where('review_status', 'pending')->count(),
             'total_approved' => Submission::where('review_status', 'approved')->count(),
             'unpaid_payout' => Submission::where('review_status', 'approved')->where('is_paid', false)->sum('rate_amount'),

@@ -144,7 +144,7 @@
             <div class="text-2xl font-bold text-slate-900 mt-1">{{ number_format($totalDomains ?? $domains->total()) }}</div>
         </div>
         <div class="p-4 bg-rose-50 rounded-xl border border-rose-200 shadow-xs">
-            <div class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Penuh / Terkunci (5/5)</div>
+            <div class="text-xs font-semibold text-rose-700 uppercase tracking-wider">Penuh / Terkunci ({{ $maxUrlsPerDomain ?? 5 }}/{{ $maxUrlsPerDomain ?? 5 }})</div>
             <div class="text-2xl font-bold text-rose-800 mt-1">{{ number_format($lockedDomains ?? 0) }}</div>
         </div>
         <div class="p-4 bg-emerald-50 rounded-xl border border-emerald-200 shadow-xs">
@@ -167,11 +167,11 @@
             </a>
             <a href="{{ route('admin.domains.index', ['status' => 'locked', 'search' => $search]) }}" 
                 class="px-3 py-1.5 rounded-lg {{ $currentStatus === 'locked' ? 'bg-rose-600 text-white' : 'bg-rose-50 text-rose-800 hover:bg-rose-100' }}">
-                Penuh / Terkunci (5/5)
+                Penuh / Terkunci
             </a>
             <a href="{{ route('admin.domains.index', ['status' => 'available', 'search' => $search]) }}" 
                 class="px-3 py-1.5 rounded-lg {{ $currentStatus === 'available' ? 'bg-emerald-600 text-white' : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100' }}">
-                Masih Ada Slot (< 5)
+                Masih Ada Slot (< {{ $maxUrlsPerDomain ?? 5 }})
             </a>
         </div>
 

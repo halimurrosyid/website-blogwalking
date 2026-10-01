@@ -82,8 +82,8 @@ class MultiTaskAndIpSubnetTest extends TestCase
         $target = TargetUrl::where('url', 'https://techno-blog.com/seo-tips/')->first();
         $this->assertEquals(3000.00, $target->getEffectiveRate());
 
-        // Domain record should have been created with IP and subnet fields present
-        $this->assertDatabaseHas('domains', [
+        // Domain record should NOT be created for raw unworked targets
+        $this->assertDatabaseMissing('domains', [
             'root_domain' => 'techno-blog.com',
         ]);
     }
@@ -150,10 +150,11 @@ class MultiTaskAndIpSubnetTest extends TestCase
         $domainService = app(DomainService::class);
         $samplePngBase64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
 
-        // Submit 6 social media posts on facebook.com
+        // Submit 6 social media posts on facebook.com with different accounts
         for ($i = 1; $i <= 6; $i++) {
             $response = $this->actingAs($this->worker)->post(route('blogwalker.submissions.store'), [
                 'target_url' => "https://facebook.com/group/post/{$i}",
+                'social_account' => "akun_facebook_{$i}",
                 'task_type' => 'social_media',
                 'platform' => 'Facebook',
                 'published_url' => "https://facebook.com/group/post/{$i}",

@@ -164,6 +164,10 @@
                                             <span class="ml-1 text-[10px] px-1.5 py-0.5 bg-rose-100 text-rose-700 rounded font-semibold">Penuh</span>
                                         @endif
                                     </div>
+                                @else
+                                    <div class="text-xs mt-0.5 text-slate-400 font-mono">
+                                        0 / {{ $maxUrlsPerDomain ?? 2 }} URL
+                                    </div>
                                 @endif
                             </td>
                             <td class="py-3 px-4 max-w-[200px]">
