@@ -166,6 +166,14 @@ class TargetUrlController extends Controller
         return redirect()->route('admin.targets.index')->with('success', $message);
     }
 
+    public function requeue(TargetUrl $target): RedirectResponse
+    {
+        $target->requeue();
+
+        return redirect()->route('admin.targets.index')
+            ->with('success', "Target URL [{$target->url}] berhasil diaktifkan kembali ke antrean siap dikerjakan.");
+    }
+
     public function destroy(TargetUrl $target): RedirectResponse
     {
         $target->delete();

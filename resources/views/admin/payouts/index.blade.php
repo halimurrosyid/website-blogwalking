@@ -3,7 +3,15 @@
 @section('title', 'Rekap Gaji & Payroll')
 
 @section('content')
-<div class="space-y-6" x-data="{ payModalOpen: false, payActionUrl: '', workerName: '', payAmount: 0, payCount: 0 }">
+<div class="space-y-6" x-data="{
+    payModalOpen: false,
+    payActionUrl: '',
+    workerName: '',
+    payAmount: 0,
+    payCount: 0,
+    workerBankInfo: '',
+    defaultPaymentMethod: ''
+}">
 
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -26,7 +34,7 @@
                 <thead class="bg-slate-50 text-[11px] uppercase font-bold tracking-wider text-slate-500 border-b border-slate-100">
                     <tr>
                         <th class="px-6 py-3.5">Nama Blogwalker</th>
-                        <th class="px-6 py-3.5">Kontak / No. Rekening</th>
+                        <th class="px-6 py-3.5">Kontak & Rekening Bank</th>
                         <th class="px-6 py-3.5 text-center">Jumlah Komentar Approved</th>
                         <th class="px-6 py-3.5">Tarif Satuan</th>
                         <th class="px-6 py-3.5 font-bold">Total Rupiah yang Harus Ditransfer</th>
@@ -35,13 +43,57 @@
                 </thead>
                 <tbody class="divide-y divide-slate-100">
                     @forelse($unpaidSummaries as $worker)
+                    @php
+                        $fullBankName = \App\Models\User::$conventionalBanks[$worker->bank_name] ?? $worker->bank_name;
+                        $hasBank = !empty($worker->bank_name) && !empty($worker->bank_account_number);
+                        $formattedBankString = $hasBank
+                            ? ($fullBankName . ' - ' . $worker->bank_account_number . ' a.n. ' . ($worker->bank_account_name ?: $worker->name))
+                            : 'Belum mengisi rekening bank';
+                        $suggestedPaymentMethod = $hasBank
+                            ? ('Transfer ' . ($worker->bank_name ?? 'Bank') . ' (' . $worker->bank_account_number . ')')
+                            : 'Transfer Bank';
+                    @endphp
                     <tr class="hover:bg-slate-50/60 transition">
                         <td class="px-6 py-4 whitespace-nowrap">
                             <span class="font-bold text-slate-900 text-sm block">{{ $worker->name }}</span>
                             <span class="text-xs text-slate-500">{{ $worker->email }}</span>
                         </td>
-                        <td class="px-6 py-4 whitespace-nowrap text-xs text-slate-600">
-                            {{ $worker->phone ?: 'Belum diisi' }}
+                        <td class="px-6 py-4 text-xs text-slate-600">
+                            @if($hasBank)
+                                <div class="space-y-1">
+                                    <div class="flex items-center gap-1.5">
+                                        <span class="px-2 py-0.5 rounded font-bold text-[10px] bg-blue-50 text-blue-700 border border-blue-200">
+                                            {{ $fullBankName }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-2 mt-0.5" x-data="{ copied: false }">
+                                        <span class="font-mono font-bold text-slate-900 text-sm tracking-wide">{{ $worker->bank_account_number }}</span>
+                                        <button type="button" @click="navigator.clipboard.writeText('{{ $worker->bank_account_number }}'); copied = true; setTimeout(() => copied = false, 2000)" class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer" :class="copied ? '!bg-emerald-100 !text-emerald-800' : ''" title="Salin nomor rekening ke clipboard">
+                                            <span x-show="!copied">📋 Salin</span>
+                                            <span x-show="copied" x-cloak class="font-bold">✓ Tersalin!</span>
+                                        </button>
+                                    </div>
+                                    <div class="text-[11px] text-slate-600">
+                                        a.n. <strong class="text-slate-800">{{ $worker->bank_account_name ?: $worker->name }}</strong>
+                                    </div>
+                                    @if($worker->phone)
+                                        <div class="text-[11px] text-slate-400">
+                                            WA: <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $worker->phone) }}" target="_blank" class="hover:underline text-emerald-600 font-mono">{{ $worker->phone }}</a>
+                                        </div>
+                                    @endif
+                                </div>
+                            @else
+                                <div class="space-y-1">
+                                    <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
+                                        ⚠️ Rekening Belum Diisi
+                                    </span>
+                                    @if($worker->phone)
+                                        <div class="text-[11px] text-slate-500">
+                                            WA: <span class="font-mono">{{ $worker->phone }}</span>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         </td>
                         <td class="px-6 py-4 text-center whitespace-nowrap">
                             <span class="px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 font-bold text-xs border border-emerald-200">
@@ -57,9 +109,11 @@
                         <td class="px-6 py-4 text-right whitespace-nowrap">
                             <button type="button" @click="
                                 payActionUrl = '{{ route('admin.payouts.process', $worker) }}';
-                                workerName = '{{ $worker->name }}';
+                                workerName = '{{ addslashes($worker->name) }}';
                                 payAmount = '{{ number_format($worker->unpaid_total, 0, ',', '.') }}';
                                 payCount = '{{ $worker->unpaid_count }}';
+                                workerBankInfo = '{{ addslashes($formattedBankString) }}';
+                                defaultPaymentMethod = '{{ addslashes($suggestedPaymentMethod) }}';
                                 payModalOpen = true;
                             " class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition cursor-pointer">
                                 💸 Tandai Sudah Ditransfer
@@ -149,10 +203,14 @@
                 Catat bahwa Anda telah mentransfer gaji ke rekening worker berikut:
             </p>
 
-            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 text-xs text-emerald-900 space-y-1">
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-4 mb-4 text-xs text-emerald-900 space-y-1.5">
                 <div>Nama Worker: <b x-text="workerName"></b></div>
-                <div>Jumlah Komentar: <b x-text="payCount + ' komentar'"></b></div>
-                <div class="text-sm font-bold text-emerald-700 pt-1">
+                <div class="pt-0.5">
+                    <span class="text-slate-500 block text-[11px]">Rekening Bank Tujuan:</span>
+                    <b class="text-emerald-950 font-mono text-xs block" x-text="workerBankInfo"></b>
+                </div>
+                <div class="pt-0.5">Jumlah Komentar: <b x-text="payCount + ' komentar'"></b></div>
+                <div class="text-sm font-bold text-emerald-700 pt-1 border-t border-emerald-200/60 mt-1">
                     Total Nominal: Rp <span x-text="payAmount"></span>
                 </div>
             </div>
@@ -161,12 +219,12 @@
                 @csrf
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Metode Transfer / Rekening</label>
-                    <input type="text" name="payment_method" placeholder="Contoh: BCA / Mandiri / Dana / Gopay"
+                    <input type="text" name="payment_method" x-model="defaultPaymentMethod" placeholder="Contoh: Transfer BCA (12345678)"
                         class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <div>
                     <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
-                    <input type="text" name="notes" placeholder="Contoh: Transfer batch minggu ke-1 September"
+                    <input type="text" name="notes" placeholder="Contoh: Transfer batch payroll minggu ke-1"
                         class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <div class="flex justify-end gap-2 pt-2">

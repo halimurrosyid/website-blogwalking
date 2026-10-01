@@ -8,7 +8,20 @@
     $hasAhrefs = \App\Services\SeoMetricService::isAhrefsEnabled();
     $hasOpr = \App\Services\SeoMetricService::isOpenPageRankEnabled();
 @endphp
-<div class="space-y-6">
+<div class="space-y-6" x-data="{
+    skipModalOpen: false,
+    skipActionUrl: '',
+    skipTargetUrl: '',
+    skipReason: 'Kolom komentar tidak ditemukan / tertutup',
+    customReason: '',
+    openSkipModal(actionUrl, targetUrl) {
+        this.skipActionUrl = actionUrl;
+        this.skipTargetUrl = targetUrl;
+        this.skipReason = 'Kolom komentar tidak ditemukan / tertutup';
+        this.customReason = '';
+        this.skipModalOpen = true;
+    }
+}">
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
@@ -41,9 +54,14 @@
     <!-- Active Tasks (Sedang Dikerjakan oleh Blogwalker ini) -->
     @if($myActiveTargets->count() > 0)
         <div class="bg-amber-50/70 border border-amber-200 rounded-xl p-5 shadow-xs">
-            <div class="flex items-center gap-2 font-bold text-amber-900 text-base mb-3">
-                <svg class="w-5 h-5 text-amber-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                Misi yang Sedang Anda Kerjakan ({{ $myActiveTargets->count() }})
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                <div class="flex items-center gap-2 font-bold text-amber-900 text-base">
+                    <svg class="w-5 h-5 text-amber-600 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Misi yang Sedang Anda Kerjakan ({{ $myActiveTargets->count() }})
+                </div>
+                <div class="text-xs text-amber-700">
+                    💡 <em>Target akan otomatis dikembalikan ke antrean bersama jika tidak diselesaikan dalam 2 jam.</em>
+                </div>
             </div>
 
             <div class="space-y-3">
@@ -51,6 +69,8 @@
                     @php
                         $targetTaskInfo = $taskTypes[$myTarget->task_type ?? 'comment'] ?? $taskTypes['comment'];
                         $targetReward = $myTarget->getEffectiveRate();
+                        $expiresAt = $myTarget->claim_expires_at;
+                        $minutesLeft = $expiresAt ? max(0, (int) now()->diffInMinutes($expiresAt, false)) : 0;
                     @endphp
                     <div class="bg-white p-4 rounded-lg border border-amber-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-2xs">
                         <div class="space-y-1.5 max-w-xl">
@@ -62,6 +82,17 @@
                                     Reward: Rp {{ number_format($targetReward, 0, ',', '.') }}
                                 </span>
                                 <span class="text-xs font-mono font-medium text-slate-500">{{ $myTarget->root_domain }}</span>
+
+                                <!-- Expiry countdown badge -->
+                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold {{ $minutesLeft > 30 ? 'bg-amber-100 text-amber-800 border border-amber-300' : 'bg-rose-100 text-rose-800 border border-rose-300 animate-pulse' }}" title="Waktu pengerjaan tersisa sebelum otomatis dilepas kembali ke antrean publik">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                    @if($minutesLeft > 0)
+                                        Sisa: {{ $minutesLeft }} menit
+                                    @else
+                                        Segera hangus
+                                    @endif
+                                </span>
+
                                 @if($myTarget->domain && (($hasMoz && ($myTarget->domain->da || $myTarget->domain->pa)) || ($hasAhrefs && $myTarget->domain->dr) || ($hasOpr && $myTarget->domain->pr)))
                                     @if($hasMoz && $myTarget->domain->da)
                                         <span class="px-1.5 py-0.2 rounded text-[10px] font-bold font-mono bg-blue-50 text-blue-700 border border-blue-200">DA {{ $myTarget->domain->da }}</span>
@@ -99,17 +130,24 @@
                             @endif
                         </div>
 
-                        <div class="flex items-center gap-2 shrink-0 w-full md:w-auto">
+                        <div class="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
                             <a href="{{ route('blogwalker.submissions.create', ['target_id' => $myTarget->id]) }}" class="flex-1 md:flex-initial inline-flex justify-center items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-xs transition">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 Kirim Laporan Selesai
                             </a>
-                            <form method="POST" action="{{ route('blogwalker.targets.skip', $myTarget->id) }}" onsubmit="return confirm('Lewati target ini jika link mati atau form komentar ditutup?')">
+
+                            <!-- Manual Release Button -->
+                            <form method="POST" action="{{ route('blogwalker.targets.release', $myTarget->id) }}" onsubmit="return confirm('Kembalikan misi target ini ke antrean bersama agar bisa diambil rekan blogwalker lain?')">
                                 @csrf
-                                <button type="submit" class="px-3 py-2 bg-slate-100 hover:bg-rose-50 hover:text-rose-700 text-slate-600 rounded-lg text-xs font-medium transition" title="Laporkan web mati / lewati">
-                                    Lewati
+                                <button type="submit" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition" title="Lepas klaim dan kembalikan ke antrean">
+                                    Lepas Target
                                 </button>
                             </form>
+
+                            <!-- Skip with Reason Button -->
+                            <button type="button" @click="openSkipModal('{{ route('blogwalker.targets.skip', $myTarget->id) }}', '{{ addslashes($myTarget->url) }}')" class="px-3 py-2 bg-rose-50 hover:bg-rose-100 text-rose-700 rounded-lg text-xs font-semibold transition" title="Laporkan web bermasalah / lewati">
+                                Lewati
+                            </button>
                         </div>
                     </div>
                 @endforeach
@@ -221,12 +259,9 @@
                                     </form>
 
                                     <!-- Skip button -->
-                                    <form method="POST" action="{{ route('blogwalker.targets.skip', $target->id) }}" onsubmit="return confirm('Lewati target ini?')">
-                                        @csrf
-                                        <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 rounded transition" title="Lewati Target">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        </button>
-                                    </form>
+                                    <button type="button" @click="openSkipModal('{{ route('blogwalker.targets.skip', $target->id) }}', '{{ addslashes($target->url) }}')" class="p-1.5 text-slate-400 hover:text-rose-600 rounded transition" title="Lewati Target">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -252,5 +287,63 @@
 
     <!-- Google Dork & Footprint Generator for Blogwalker -->
     @include('components.dork-generator', ['assignment' => $assignment])
+
+    <!-- Skip Target Reason Modal -->
+    <div x-show="skipModalOpen" x-cloak class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div class="bg-white max-w-md w-full rounded-2xl p-6 shadow-xl border border-slate-200" @click.outside="skipModalOpen = false">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+                <h3 class="text-base font-bold text-slate-900">Lewati / Laporkan Target URL</h3>
+                <button type="button" @click="skipModalOpen = false" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+            </div>
+
+            <p class="text-xs text-slate-600 mb-2">
+                Pilih alasan mengapa URL berikut tidak dapat dikomentari:
+            </p>
+            <div class="bg-slate-50 p-2.5 rounded-lg text-xs font-mono text-slate-700 truncate mb-4 border border-slate-200" x-text="skipTargetUrl"></div>
+
+            <form :action="skipActionUrl" method="POST" class="space-y-4">
+                @csrf
+                <div class="space-y-2">
+                    <label class="flex items-center gap-2.5 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs">
+                        <input type="radio" name="reason" value="Kolom komentar tidak ditemukan / tertutup" x-model="skipReason" class="text-emerald-600 focus:ring-emerald-500">
+                        <span class="font-medium text-slate-800">🔒 Kolom komentar ditutup / tidak ada form</span>
+                    </label>
+                    <label class="flex items-center gap-2.5 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs">
+                        <input type="radio" name="reason" value="Website rusak / Error 404 Not Found" x-model="skipReason" class="text-emerald-600 focus:ring-emerald-500">
+                        <span class="font-medium text-slate-800">❌ Website rusak / Error 404 Not Found</span>
+                    </label>
+                    <label class="flex items-center gap-2.5 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs">
+                        <input type="radio" name="reason" value="Wajib Berlangganan / Paywall / Akun Premium" x-model="skipReason" class="text-emerald-600 focus:ring-emerald-500">
+                        <span class="font-medium text-slate-800">💳 Wajib Berlangganan / Paywall / Akun Premium</span>
+                    </label>
+                    <label class="flex items-center gap-2.5 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs">
+                        <input type="radio" name="reason" value="Formulir komentar error / Captcha rusak" x-model="skipReason" class="text-emerald-600 focus:ring-emerald-500">
+                        <span class="font-medium text-slate-800">⚠️ Formulir komentar error / Captcha rusak</span>
+                    </label>
+                    <label class="flex items-center gap-2.5 p-2 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer text-xs">
+                        <input type="radio" name="reason" value="other" x-model="skipReason" class="text-emerald-600 focus:ring-emerald-500">
+                        <span class="font-medium text-slate-800">✍️ Alasan lainnya...</span>
+                    </label>
+                </div>
+
+                <div x-show="skipReason === 'other'" class="pt-1">
+                    <input type="text" x-model="customReason" placeholder="Tulis alasan skip..." class="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                </div>
+
+                <input type="hidden" name="reason" :value="skipReason === 'other' ? (customReason || 'Alasan lainnya') : skipReason" x-show="skipReason === 'other'">
+
+                <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" @click="skipModalOpen = false" class="px-4 py-2 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white">
+                        Konfirmasi Lewati
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection

@@ -154,7 +154,7 @@
                                     <div class="text-xs text-slate-500 mt-1 truncate" title="{{ $target->notes }}">{{ $target->notes }}</div>
                                 @endif
                             </td>
-                            <td class="py-3 px-4 whitespace-nowrap">
+                            <td class="py-3 px-4">
                                 @if($target->status === 'available')
                                     <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800">
                                         <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5"></span>
@@ -170,11 +170,18 @@
                                         Selesai
                                     </span>
                                 @elseif($target->status === 'skipped')
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
-                                        Dilewati
-                                    </span>
+                                    <div>
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800 border border-rose-200">
+                                            ⚠️ Dilewati
+                                        </span>
+                                        @if($target->notes && str_contains($target->notes, 'Skip:'))
+                                            <div class="text-[11px] text-rose-700 font-medium mt-1 leading-snug" title="{{ $target->notes }}">
+                                                {{ str_replace('Skip: ', '', strstr($target->notes, 'Skip:')) }}
+                                            </div>
+                                        @endif
+                                    </div>
                                 @elseif($target->status === 'domain_full')
-                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800">
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800">
                                         Domain Penuh (5/5)
                                     </span>
                                 @endif
@@ -188,13 +195,23 @@
                                 @endif
                             </td>
                             <td class="py-3 px-4 whitespace-nowrap text-right text-xs">
-                                <form method="POST" action="{{ route('admin.targets.destroy', $target->id) }}" onsubmit="return confirm('Hapus target URL ini?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Hapus Target">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
-                                </form>
+                                <div class="flex items-center justify-end gap-1.5">
+                                    @if(in_array($target->status, ['skipped', 'domain_full']))
+                                        <form method="POST" action="{{ route('admin.targets.requeue', $target->id) }}" onsubmit="return confirm('Aktifkan kembali target URL ini ke status Tersedia?')">
+                                            @csrf
+                                            <button type="submit" class="p-1.5 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded transition" title="Aktifkan Kembali ke Antrean (Re-queue)">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                                            </button>
+                                        </form>
+                                    @endif
+                                    <form method="POST" action="{{ route('admin.targets.destroy', $target->id) }}" onsubmit="return confirm('Hapus target URL ini?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="p-1.5 text-slate-400 hover:text-rose-600 transition" title="Hapus Target">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @empty

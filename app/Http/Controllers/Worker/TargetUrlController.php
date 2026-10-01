@@ -15,6 +15,9 @@ class TargetUrlController extends Controller
 {
     public function index(Request $request): View
     {
+        // Auto-release any claims inactive for more than 2 hours so others can take them
+        TargetUrl::releaseStaleClaims(2);
+
         $user = auth()->user();
 
         // Targets currently claimed by this user
@@ -89,15 +92,34 @@ class TargetUrlController extends Controller
             ->with('success', 'Target URL berhasil diklaim. Silakan buka halaman target, beri komentar, dan unggah screenshot bukti!');
     }
 
+    public function release(TargetUrl $target): RedirectResponse
+    {
+        if ($target->status !== 'in_progress' || $target->taken_by_user_id !== auth()->id()) {
+            return redirect()->route('blogwalker.targets.index')
+                ->with('error', 'Hanya misi target yang sedang Anda kerjakan yang dapat dikembalikan ke antrean.');
+        }
+
+        $target->releaseToPool();
+
+        return redirect()->route('blogwalker.targets.index')
+            ->with('success', 'Target URL berhasil dilepas dan dikembalikan ke antrean bersama.');
+    }
+
     public function skip(Request $request, TargetUrl $target): RedirectResponse
     {
         $request->validate([
             'reason' => 'nullable|string|max:255',
         ]);
 
-        $reason = $request->input('reason', 'Kolom komentar tidak ditemukan / tertutup');
+        if ($target->status === 'in_progress' && $target->taken_by_user_id !== auth()->id()) {
+            return redirect()->route('blogwalker.targets.index')
+                ->with('error', 'Target URL ini sedang dikerjakan oleh rekan lain.');
+        }
+
+        $reason = $request->input('reason') ?: 'Kolom komentar tidak ditemukan / tertutup';
         $target->markSkipped($reason);
 
-        return redirect()->route('blogwalker.targets.index')->with('success', "Target URL telah dilewati dengan alasan: {$reason}.");
+        return redirect()->route('blogwalker.targets.index')
+            ->with('success', "Target URL telah dilewati ({$reason}).");
     }
 }

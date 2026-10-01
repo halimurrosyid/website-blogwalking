@@ -4,8 +4,10 @@ namespace Tests\Feature;
 
 use App\Models\Assignment;
 use App\Models\Domain;
+use App\Models\Submission;
 use App\Models\TargetUrl;
 use App\Models\User;
+use App\Services\PeriodService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -159,5 +161,131 @@ class TargetUrlPoolTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('.com.my (Malaysia)');
         $response->assertSee('.de (Jerman)');
+    }
+
+    public function test_blogwalker_can_release_claimed_target_back_to_pool(): void
+    {
+        $target = TargetUrl::create([
+            'url' => 'https://websitetarget.id/tips-dilepas/',
+            'root_domain' => 'websitetarget.id',
+            'status' => 'available',
+        ]);
+
+        // Claim first
+        $this->actingAs($this->blogwalker)->post(route('blogwalker.targets.claim', $target->id));
+        $target->refresh();
+        $this->assertEquals('in_progress', $target->status);
+        $this->assertEquals($this->blogwalker->id, $target->taken_by_user_id);
+
+        // Worker releases the target back to pool
+        $releaseResponse = $this->actingAs($this->blogwalker)->post(route('blogwalker.targets.release', $target->id));
+        $releaseResponse->assertRedirect(route('blogwalker.targets.index'));
+
+        $target->refresh();
+        $this->assertEquals('available', $target->status);
+        $this->assertNull($target->taken_by_user_id);
+        $this->assertNull($target->taken_at);
+    }
+
+    public function test_stale_in_progress_targets_are_auto_released_after_two_hours(): void
+    {
+        $staleTarget = TargetUrl::create([
+            'url' => 'https://websitetarget.id/tips-terlantar/',
+            'root_domain' => 'websitetarget.id',
+            'status' => 'in_progress',
+            'taken_by_user_id' => $this->blogwalker->id,
+            'taken_at' => now()->subHours(3),
+        ]);
+
+        $freshTarget = TargetUrl::create([
+            'url' => 'https://websitetarget.id/tips-baru-diambil/',
+            'root_domain' => 'websitetarget.id',
+            'status' => 'in_progress',
+            'taken_by_user_id' => $this->blogwalker->id,
+            'taken_at' => now()->subMinutes(30),
+        ]);
+
+        // Accessing targets index triggers auto-release
+        $this->actingAs($this->blogwalker)->get(route('blogwalker.targets.index'));
+
+        $staleTarget->refresh();
+        $freshTarget->refresh();
+
+        $this->assertEquals('available', $staleTarget->status);
+        $this->assertNull($staleTarget->taken_by_user_id);
+
+        $this->assertEquals('in_progress', $freshTarget->status);
+        $this->assertEquals($this->blogwalker->id, $freshTarget->taken_by_user_id);
+    }
+
+    public function test_admin_can_requeue_skipped_target(): void
+    {
+        $target = TargetUrl::create([
+            'url' => 'https://webtutup.com/post-requeue',
+            'root_domain' => 'webtutup.com',
+            'status' => 'skipped',
+            'notes' => 'Skip: Kolom komentar ditutup',
+        ]);
+
+        $response = $this->actingAs($this->admin)->post(route('admin.targets.requeue', $target->id));
+        $response->assertRedirect(route('admin.targets.index'));
+
+        $target->refresh();
+        $this->assertEquals('available', $target->status);
+        $this->assertNull($target->taken_by_user_id);
+    }
+
+    public function test_payout_index_displays_worker_bank_details(): void
+    {
+        $worker = User::factory()->create([
+            'name' => 'Budi Santoso',
+            'role' => 'blogwalker',
+            'bank_name' => 'BCA',
+            'bank_account_number' => '1234567890',
+            'bank_account_name' => 'Budi Santoso',
+            'phone' => '08123456789',
+        ]);
+
+        $domain = Domain::create([
+            'root_domain' => 'domainku.com',
+            'tld' => '.com',
+            'url_count' => 1,
+            'max_limit' => 5,
+        ]);
+
+        Submission::create([
+            'user_id' => $worker->id,
+            'domain_id' => $domain->id,
+            'target_url' => 'https://domainku.com/blog/1',
+            'root_domain' => 'domainku.com',
+            'live_url' => 'https://domainku.com/blog/1#comment-1',
+            'screenshot_path' => 'screenshots/test.png',
+            'review_status' => 'approved',
+            'is_paid' => false,
+            'rate_amount' => 1000.00,
+        ]);
+
+        $response = $this->actingAs($this->admin)->get(route('admin.payouts.index'));
+        $response->assertStatus(200);
+        $response->assertSee('Budi Santoso');
+        $response->assertSee('Bank Central Asia (BCA)');
+        $response->assertSee('1234567890');
+        $response->assertSee('Salin');
+    }
+
+    public function test_worker_dashboard_shows_countdown_banner_when_deadline_is_near(): void
+    {
+        $periodService = app(PeriodService::class);
+        $period = $periodService->getActivePeriod();
+        $period->update([
+            'starts_at' => now()->subDays(25)->toDateString(),
+            'ends_at' => now()->addDays(3)->toDateString(),
+            'min_target' => 50,
+        ]);
+
+        $response = $this->actingAs($this->blogwalker)->get(route('blogwalker.dashboard'));
+        $response->assertStatus(200);
+        $response->assertSee('Sisa 3 Hari Lagi!');
+        $response->assertSee('Perhatian: Target Periode');
     }
 }

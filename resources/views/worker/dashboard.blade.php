@@ -40,6 +40,38 @@
     </div>
     @endif
 
+    <!-- URGENT COUNTDOWN & DEADLINE MOTIVATION BANNER (H-5 to H-0) -->
+    @if($activePeriod && $activePeriod->remainingDays() <= 5 && !$periodProgress['is_qualified'] && !$isDisqualified)
+    <div class="p-5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-amber-500/15 border-2 border-amber-500/40 text-amber-950 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div class="flex items-start gap-3.5">
+            <div class="w-11 h-11 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold text-2xl shrink-0 shadow-xs">
+                ⏰
+            </div>
+            <div class="space-y-1">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="px-2.5 py-0.5 rounded-full text-[11px] font-black uppercase tracking-wider {{ $activePeriod->remainingDays() <= 2 ? 'bg-rose-600 text-white animate-pulse' : 'bg-amber-600 text-white' }}">
+                        @if($activePeriod->remainingDays() === 0)
+                            Hari Terakhir Periode!
+                        @else
+                            Sisa {{ $activePeriod->remainingDays() }} Hari Lagi!
+                        @endif
+                    </span>
+                    <h3 class="text-sm font-bold text-slate-900">Perhatian: Target Periode {{ $activePeriod->name }} Segera Berakhir</h3>
+                </div>
+                <p class="text-xs text-slate-600 leading-relaxed">
+                    Periode akan ditutup pada <strong>{{ $activePeriod->ends_at->format('d M Y') }}</strong>. Saat ini Anda masih kurang <strong>{{ $periodProgress['remaining_needed'] }} komentar disetujui</strong> untuk memenuhi kuota minimum dan mengamankan keikutsertaan Anda di bulan depan.
+                </p>
+            </div>
+        </div>
+        <div class="shrink-0 flex items-center gap-2 w-full md:w-auto">
+            <a href="{{ route('blogwalker.targets.index') }}" class="w-full md:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition">
+                <span>🎯 Kejar Target di Antrean URL</span>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            </a>
+        </div>
+    </div>
+    @endif
+
     <!-- MONTHLY PERIOD TARGET & PROGRESS TRACKER -->
     <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white p-6 rounded-2xl shadow-sm space-y-4">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-700/70 gap-2">

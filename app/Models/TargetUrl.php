@@ -6,6 +6,7 @@ use App\Services\TaskTypeService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
 class TargetUrl extends Model
 {
@@ -114,5 +115,47 @@ class TargetUrl extends Model
             'status' => 'skipped',
             'notes' => $reason ? ($this->notes ? $this->notes." | Skip: {$reason}" : "Skip: {$reason}") : $this->notes,
         ]);
+    }
+
+    /**
+     * Release a claimed target back to available pool.
+     */
+    public function releaseToPool(): void
+    {
+        $this->update([
+            'status' => 'available',
+            'taken_by_user_id' => null,
+            'taken_at' => null,
+        ]);
+    }
+
+    /**
+     * Re-queue a skipped or inactive target back to available.
+     */
+    public function requeue(): void
+    {
+        $this->releaseToPool();
+    }
+
+    /**
+     * Release all stale in-progress claims older than the specified hours.
+     */
+    public static function releaseStaleClaims(int $hours = 2): int
+    {
+        return self::where('status', 'in_progress')
+            ->where('taken_at', '<', now()->subHours($hours))
+            ->update([
+                'status' => 'available',
+                'taken_by_user_id' => null,
+                'taken_at' => null,
+            ]);
+    }
+
+    /**
+     * Get when this claim will expire (2 hours after taken_at).
+     */
+    public function getClaimExpiresAtAttribute(): ?Carbon
+    {
+        return $this->taken_at ? $this->taken_at->copy()->addHours(2) : null;
     }
 }
