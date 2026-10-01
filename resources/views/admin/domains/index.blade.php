@@ -50,29 +50,12 @@
                 success: false
             };
         }
-    },
-    metricsModalOpen: false,
-    metricsDomainName: '',
-    metricsDomainAction: '',
-    metricsDa: '',
-    metricsPa: '',
-    metricsDr: '',
-    metricsPr: '',
     openEditQuota(name, action, currentLimit, count) {
         this.editDomainName = name;
         this.editDomainAction = action;
         this.editDomainLimit = currentLimit;
         this.editDomainCount = count;
         this.editModalOpen = true;
-    },
-    openEditMetrics(name, action, da, pa, dr, pr) {
-        this.metricsDomainName = name;
-        this.metricsDomainAction = action;
-        this.metricsDa = (da && da !== 'null') ? da : '';
-        this.metricsPa = (pa && pa !== 'null') ? pa : '';
-        this.metricsDr = (dr && dr !== 'null') ? dr : '';
-        this.metricsPr = (pr && pr !== 'null') ? pr : '';
-        this.metricsModalOpen = true;
     },
     toggleAll(e) {
         if (e.target.checked) {
@@ -282,14 +265,6 @@
                                         <span class="px-1.5 py-0.5 rounded text-[11px] font-bold font-mono {{ $domain->pr ? 'bg-purple-100 text-purple-800 border border-purple-200' : 'bg-slate-100 text-slate-400' }}" title="PageRank / Score">
                                             PR {{ $domain->pr ?? '-' }}
                                         </span>
-                                    @endif
-                                    @if($showDa || $showPa || $showPr)
-                                        <button type="button" 
-                                            @click="openEditMetrics('{{ $domain->root_domain }}', '{{ route('admin.domains.metrics', $domain) }}', '{{ $domain->da }}', '{{ $domain->pa }}', '{{ $domain->dr }}', '{{ $domain->pr }}')"
-                                            class="text-xs text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 px-1 py-0.5 rounded transition cursor-pointer" 
-                                            title="Edit manual nilai DA, PA, PR">
-                                            ✏️
-                                        </button>
                                     @endif
                                 </div>
                                 @if($domain->seo_updated_at)
@@ -587,69 +562,6 @@
         </div>
     </div>
 
-    <!-- Modal: Ubah Manual Metrik SEO -->
-    <div x-show="metricsModalOpen" x-cloak class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4 backdrop-blur-2xs" @click="metricsModalOpen = false">
-        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4" @click.stop>
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-                <div>
-                    <h3 class="font-bold text-slate-900 text-base">Edit Metrik SEO Domain</h3>
-                    <p class="text-xs text-slate-500 mt-0.5">Ubah nilai otoritas DA, PA, DR, dan PR untuk domain ini secara manual.</p>
-                </div>
-                <button type="button" @click="metricsModalOpen = false" class="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer">&times;</button>
-            </div>
-
-            <form :action="metricsDomainAction" method="POST" class="space-y-4">
-                @csrf
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/80">
-                    <div class="text-xs text-slate-500">Domain:</div>
-                    <div class="font-bold text-sm text-slate-900 font-mono" x-text="metricsDomainName"></div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-blue-700 uppercase tracking-wider mb-1">
-                            DA (Domain Authority)
-                        </label>
-                        <input type="number" name="da" x-model="metricsDa" min="0" max="100" placeholder="0-100"
-                            class="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-cyan-700 uppercase tracking-wider mb-1">
-                            PA (Page Authority)
-                        </label>
-                        <input type="number" name="pa" x-model="metricsPa" min="0" max="100" placeholder="0-100"
-                            class="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-amber-700 uppercase tracking-wider mb-1">
-                            DR (Domain Rating)
-                        </label>
-                        <div class="px-3 py-2 rounded-xl border border-slate-200 bg-slate-100 text-xs font-mono font-bold text-slate-600 flex items-center justify-between">
-                            <span x-text="metricsDr ? metricsDr : 'Belum ada nilai'"></span>
-                            <span class="text-[10px] text-amber-800 font-semibold bg-amber-100 border border-amber-300 px-1.5 py-0.5 rounded">🔒 Resmi Ahrefs</span>
-                        </div>
-                        <p class="text-[10px] text-slate-400 mt-1">DR dikunci dan hanya dapat diperbarui otomatis dari Ahrefs resmi.</p>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-purple-700 uppercase tracking-wider mb-1">
-                            PR (PageRank / Score)
-                        </label>
-                        <input type="text" name="pr" x-model="metricsPr" maxlength="10" placeholder="e.g. 4.2"
-                            class="w-full px-3 py-2 text-sm font-bold font-mono rounded-xl border border-slate-300 focus:ring-2 focus:ring-purple-500 focus:outline-none">
-                    </div>
-                </div>
-
-                <div class="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
-                    <button type="button" @click="metricsModalOpen = false" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 cursor-pointer">
-                        Batal
-                    </button>
-                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer">
-                        Simpan Nilai Metrik
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
 </div>
 @endsection
+

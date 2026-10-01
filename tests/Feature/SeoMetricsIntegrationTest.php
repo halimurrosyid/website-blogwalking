@@ -174,30 +174,22 @@ class SeoMetricsIntegrationTest extends TestCase
         $this->assertNotNull($domain->seo_updated_at);
     }
 
-    public function test_super_admin_can_update_metrics_manually_except_dr(): void
+    public function test_manual_editing_of_seo_metrics_is_disallowed(): void
     {
         $domain = Domain::create([
             'root_domain' => 'manual-seo.com',
             'tld' => '.com',
-            'dr' => null,
             'max_limit' => 5,
         ]);
 
-        $response = $this->actingAs($this->admin)->post(route('admin.domains.metrics', $domain), [
+        $response = $this->actingAs($this->admin)->post("/admin/domains/{$domain->id}/metrics", [
             'da' => 50,
             'pa' => 40,
             'dr' => 65,
             'pr' => '5.0',
         ]);
 
-        $response->assertRedirect();
-        $response->assertSessionHas('success');
-
-        $domain->refresh();
-        $this->assertEquals(50, $domain->da);
-        $this->assertEquals(40, $domain->pa);
-        $this->assertNull($domain->dr);
-        $this->assertEquals('5.0', $domain->pr);
+        $response->assertNotFound();
     }
 
     public function test_worker_can_see_da_pa_dr_pr_metrics_in_targets_and_submissions(): void

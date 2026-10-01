@@ -316,25 +316,4 @@ class DomainController extends Controller
 
         return back()->with('success', "Pengecekan metrik SEO selesai. {$updated} dari {$domains->count()} domain berhasil diperbarui.");
     }
-
-    /**
-     * Update SEO metrics manually for a domain (DA, PA, PR only; DR is locked to Ahrefs).
-     */
-    public function updateMetrics(Request $request, Domain $domain): RedirectResponse
-    {
-        $validated = $request->validate([
-            'da' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'pa' => ['nullable', 'integer', 'min:0', 'max:100'],
-            'pr' => ['nullable', 'string', 'max:10'],
-        ]);
-
-        $domain->update([
-            'da' => $validated['da'] ?? null,
-            'pa' => $validated['pa'] ?? null,
-            'pr' => $validated['pr'] ?? null,
-            'seo_updated_at' => now(),
-        ]);
-
-        return back()->with('success', "Nilai metrik SEO domain [{$domain->root_domain}] berhasil disimpan.");
-    }
 }

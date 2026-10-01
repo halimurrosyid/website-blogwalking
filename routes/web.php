@@ -102,7 +102,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/domains/test-api-key', [DomainController::class, 'testApiKey'])->name('domains.test-api-key');
     Route::post('/domains/{domain}/fetch-seo', [DomainController::class, 'fetchSeo'])->name('domains.fetch-seo');
     Route::post('/domains/bulk-fetch-seo', [DomainController::class, 'bulkFetchSeo'])->name('domains.bulk-fetch-seo');
-    Route::post('/domains/{domain}/metrics', [DomainController::class, 'updateMetrics'])->name('domains.metrics');
 
     // Payout / Payroll
     Route::get('/payouts', [PayoutController::class, 'index'])->name('payouts.index');
