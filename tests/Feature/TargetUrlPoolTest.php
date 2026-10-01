@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Assignment;
 use App\Models\Domain;
 use App\Models\TargetUrl;
 use App\Models\User;
@@ -130,5 +131,33 @@ class TargetUrlPoolTest extends TestCase
         $target->refresh();
         $this->assertEquals('skipped', $target->status);
         $this->assertStringContainsString('Kolom komentar dimatikan', $target->notes);
+    }
+
+    public function test_dork_generator_locks_to_worker_assigned_plotting(): void
+    {
+        Assignment::create([
+            'user_id' => $this->blogwalker->id,
+            'allowed_tlds' => ['.co.id', '.web.id'],
+            'target_keywords' => 'paket wifi, internet murah',
+            'is_active' => true,
+        ]);
+
+        $response = $this->actingAs($this->blogwalker)->get(route('blogwalker.targets.index'));
+        $response->assertStatus(200);
+        $response->assertSee('🎯 Sesuai Plotting Super Admin');
+        $response->assertSee('.co.id (Plotting Tugas Anda)');
+        $response->assertSee('.web.id (Plotting Tugas Anda)');
+        $response->assertSee('paket wifi');
+        // Unassigned TLDs must NOT be present in options
+        $response->assertDontSee('.com.my (Malaysia)');
+        $response->assertDontSee('.de (Jerman)');
+    }
+
+    public function test_dork_generator_shows_all_options_for_admin(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.targets.create'));
+        $response->assertStatus(200);
+        $response->assertSee('.com.my (Malaysia)');
+        $response->assertSee('.de (Jerman)');
     }
 }

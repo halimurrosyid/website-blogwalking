@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Worker;
 
 use App\Http\Controllers\Controller;
+use App\Models\Assignment;
 use App\Models\TargetUrl;
+use App\Services\PeriodService;
 use App\Services\TaskTypeService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,6 +46,18 @@ class TargetUrlController extends Controller
         $availableTargets = $query->paginate(20)->withQueryString();
         $taskTypes = TaskTypeService::all();
 
+        $periodService = app(PeriodService::class);
+        $activePeriod = $periodService->getActivePeriod();
+        $assignment = Assignment::where('user_id', $user->id)
+            ->when($activePeriod, function ($query, $period) {
+                $query->where(function ($q) use ($period) {
+                    $q->where('period_id', $period->id)
+                        ->orWhereNull('period_id');
+                });
+            })
+            ->latest()
+            ->first();
+
         $stats = [
             'available_count' => TargetUrl::available()->count(),
             'my_in_progress' => $myActiveTargets->count(),
@@ -53,7 +67,7 @@ class TargetUrlController extends Controller
                 ->count(),
         ];
 
-        return view('worker.targets.index', compact('availableTargets', 'myActiveTargets', 'stats', 'taskTypes'));
+        return view('worker.targets.index', compact('availableTargets', 'myActiveTargets', 'stats', 'taskTypes', 'assignment'));
     }
 
     public function claim(TargetUrl $target): RedirectResponse

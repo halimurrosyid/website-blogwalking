@@ -251,6 +251,6 @@
     </div>
 
     <!-- Google Dork & Footprint Generator for Blogwalker -->
-    @include('components.dork-generator')
+    @include('components.dork-generator', ['assignment' => $assignment])
 </div>
 @endsection

@@ -1,8 +1,33 @@
+@php
+    $currentUser = auth()->user();
+    $currentAssignment = $assignment ?? ($currentUser?->role === 'blogwalker' 
+        ? (\App\Models\Assignment::where('user_id', $currentUser->id)->latest()->first()) 
+        : null);
+
+    $plottedTlds = [];
+    if ($currentUser?->role === 'blogwalker' && $currentAssignment && !empty($currentAssignment->allowed_tlds)) {
+        $plottedTlds = array_values(array_filter(array_map(fn($t) => ltrim(trim($t), '.'), (array) $currentAssignment->allowed_tlds)));
+    }
+
+    $plottedKeywords = [];
+    if ($currentUser?->role === 'blogwalker' && $currentAssignment && !empty($currentAssignment->target_keywords)) {
+        $rawKw = $currentAssignment->target_keywords;
+        if (is_array($rawKw)) {
+            $plottedKeywords = array_values(array_filter(array_map('trim', $rawKw)));
+        } else {
+            $plottedKeywords = array_values(array_filter(array_map('trim', explode(',', (string) $rawKw))));
+        }
+    }
+
+    $defaultTld = !empty($plottedTlds) ? $plottedTlds[0] : 'co.id';
+    $defaultKeyword = !empty($plottedKeywords) ? $plottedKeywords[0] : '';
+@endphp
+
 <div class="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs" x-data="{
-    tld: 'co.id',
+    tld: '{{ $defaultTld }}',
     customTld: '',
     footprint: 'tinggalkan komentar',
-    keyword: '',
+    keyword: '{{ addslashes($defaultKeyword) }}',
     copied: false,
 
     get effectiveTld() {
@@ -44,14 +69,27 @@
     }
 }">
     <!-- Header -->
-    <div class="flex items-center justify-between pb-4 mb-4 border-b border-slate-100">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-100 gap-2">
         <div class="flex items-center gap-3">
-            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-lg shadow-2xs">
+            <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-lg shadow-2xs shrink-0">
                 ⚡
             </div>
             <div>
-                <h3 class="text-base font-bold text-slate-900 leading-tight">Google Dork & Footprint Generator</h3>
-                <p class="text-xs text-slate-500">Buat link pencarian Google 1-klik untuk menemukan blog & website yang kolom komentarnya terbuka.</p>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="text-base font-bold text-slate-900 leading-tight">Google Dork & Footprint Generator</h3>
+                    @if(!empty($plottedTlds))
+                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            🎯 Sesuai Plotting Super Admin
+                        </span>
+                    @endif
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    @if(!empty($plottedTlds))
+                        Opsi pencarian otomatis dikunci sesuai ekstensi domain yang di-plotting Super Admin untuk tugas Anda.
+                    @else
+                        Buat link pencarian Google 1-klik untuk menemukan blog & website yang kolom komentarnya terbuka.
+                    @endif
+                </p>
             </div>
         </div>
         <span class="hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -63,69 +101,89 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <!-- Target TLD / Platform -->
         <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                1. Ekstensi / Platform Target
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <span>1. Ekstensi Target</span>
+                @if(!empty($plottedTlds))
+                    <span class="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-1.5 py-0.5 rounded border border-emerald-300">
+                        Plotting
+                    </span>
+                @endif
             </label>
-            <select x-model="tld" class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
-                <optgroup label="Indonesia">
-                    <option value="co.id">.co.id (Bisnis / Brand Indo)</option>
-                    <option value="web.id">.web.id (Personal / Komunitas)</option>
-                    <option value="id">.id (Umum Indonesia)</option>
-                    <option value="sch.id">.sch.id (Sekolah - DA Tinggi)</option>
-                    <option value="ac.id">.ac.id (Kampus - DA Tinggi)</option>
-                    <option value="my.id">.my.id (Blog Pribadi)</option>
-                    <option value="biz.id">.biz.id (UMKM / Bisnis)</option>
-                </optgroup>
-                <optgroup label="Asia & Pasifik">
-                    <option value="com.my">.com.my (Malaysia)</option>
-                    <option value="com.sg">.com.sg (Singapura)</option>
-                    <option value="co.th">.co.th (Thailand)</option>
-                    <option value="com.ph">.com.ph (Filipina)</option>
-                    <option value="com.au">.com.au (Australia)</option>
-                    <option value="co.nz">.co.nz (Selandia Baru)</option>
-                    <option value="co.jp">.co.jp (Jepang)</option>
-                    <option value="co.in">.co.in (India)</option>
-                </optgroup>
-                <optgroup label="Eropa">
-                    <option value="co.uk">.co.uk (Inggris Raya)</option>
-                    <option value="de">.de (Jerman)</option>
-                    <option value="fr">.fr (Prancis)</option>
-                    <option value="it">.it (Italia)</option>
-                    <option value="es">.es (Spanyol)</option>
-                    <option value="nl">.nl (Belanda)</option>
-                </optgroup>
-                <optgroup label="Amerika">
-                    <option value="com">.com (Global / US)</option>
-                    <option value="ca">.ca (Kanada)</option>
-                    <option value="com.br">.com.br (Brasil)</option>
-                    <option value="com.mx">.com.mx (Meksiko)</option>
-                    <option value="com.ar">.com.ar (Argentina)</option>
-                </optgroup>
-                <optgroup label="Timur Tengah & Afrika">
-                    <option value="co.za">.co.za (Afrika Selatan)</option>
-                    <option value="com.ng">.com.ng (Nigeria)</option>
-                    <option value="co.ae">.co.ae (Uni Emirat Arab)</option>
-                    <option value="com.sa">.com.sa (Arab Saudi)</option>
-                    <option value="com.eg">.com.eg (Mesir)</option>
-                </optgroup>
-                <optgroup label="Platform Blog Populer">
-                    <option value="*.blogspot.com">*.blogspot.com (Blogger)</option>
-                    <option value="*.wordpress.com">*.wordpress.com (WordPress Free)</option>
-                </optgroup>
-                <optgroup label="Global & Ekstensi Baru">
-                    <option value="net">.net</option>
-                    <option value="org">.org</option>
-                    <option value="xyz">.xyz</option>
-                    <option value="online">.online</option>
-                    <option value="tech">.tech</option>
-                    <option value="ai">.ai / .io</option>
-                    <option value="none">Bebas Semua Ekstensi</option>
-                    <option value="custom">Kustom Sendiri (Ketik Manual)...</option>
-                </optgroup>
-            </select>
-            <div x-show="tld === 'custom'" x-cloak class="mt-2">
-                <input type="text" x-model="customTld" placeholder="Contoh: or.id atau namaweb.com" class="w-full text-xs border-slate-300 rounded-lg px-3 py-1.5 focus:ring-emerald-500 focus:border-emerald-500">
-            </div>
+
+            @if(!empty($plottedTlds))
+                <select x-model="tld" class="w-full text-sm border-emerald-300 bg-emerald-50/40 font-semibold text-emerald-900 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <optgroup label="🎯 Ekstensi Sesuai Plotting Tugas Anda">
+                        @foreach($plottedTlds as $pt)
+                            <option value="{{ $pt }}">.{{ $pt }} (Plotting Tugas Anda)</option>
+                        @endforeach
+                    </optgroup>
+                </select>
+                <div class="mt-1.5 flex items-center gap-1 text-[11px] text-emerald-700 font-medium">
+                    <svg class="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                    <span>Khusus ekstensi plotting agar tugas Anda selalu lolos verifikasi.</span>
+                </div>
+            @else
+                <select x-model="tld" class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+                    <optgroup label="Indonesia">
+                        <option value="co.id">.co.id (Bisnis / Brand Indo)</option>
+                        <option value="web.id">.web.id (Personal / Komunitas)</option>
+                        <option value="id">.id (Umum Indonesia)</option>
+                        <option value="sch.id">.sch.id (Sekolah - DA Tinggi)</option>
+                        <option value="ac.id">.ac.id (Kampus - DA Tinggi)</option>
+                        <option value="my.id">.my.id (Blog Pribadi)</option>
+                        <option value="biz.id">.biz.id (UMKM / Bisnis)</option>
+                    </optgroup>
+                    <optgroup label="Asia & Pasifik">
+                        <option value="com.my">.com.my (Malaysia)</option>
+                        <option value="com.sg">.com.sg (Singapura)</option>
+                        <option value="co.th">.co.th (Thailand)</option>
+                        <option value="com.ph">.com.ph (Filipina)</option>
+                        <option value="com.au">.com.au (Australia)</option>
+                        <option value="co.nz">.co.nz (Selandia Baru)</option>
+                        <option value="co.jp">.co.jp (Jepang)</option>
+                        <option value="co.in">.co.in (India)</option>
+                    </optgroup>
+                    <optgroup label="Eropa">
+                        <option value="co.uk">.co.uk (Inggris Raya)</option>
+                        <option value="de">.de (Jerman)</option>
+                        <option value="fr">.fr (Prancis)</option>
+                        <option value="it">.it (Italia)</option>
+                        <option value="es">.es (Spanyol)</option>
+                        <option value="nl">.nl (Belanda)</option>
+                    </optgroup>
+                    <optgroup label="Amerika">
+                        <option value="com">.com (Global / US)</option>
+                        <option value="ca">.ca (Kanada)</option>
+                        <option value="com.br">.com.br (Brasil)</option>
+                        <option value="com.mx">.com.mx (Meksiko)</option>
+                        <option value="com.ar">.com.ar (Argentina)</option>
+                    </optgroup>
+                    <optgroup label="Timur Tengah & Afrika">
+                        <option value="co.za">.co.za (Afrika Selatan)</option>
+                        <option value="com.ng">.com.ng (Nigeria)</option>
+                        <option value="co.ae">.co.ae (Uni Emirat Arab)</option>
+                        <option value="com.sa">.com.sa (Arab Saudi)</option>
+                        <option value="com.eg">.com.eg (Mesir)</option>
+                    </optgroup>
+                    <optgroup label="Platform Blog Populer">
+                        <option value="*.blogspot.com">*.blogspot.com (Blogger)</option>
+                        <option value="*.wordpress.com">*.wordpress.com (WordPress Free)</option>
+                    </optgroup>
+                    <optgroup label="Global & Ekstensi Baru">
+                        <option value="net">.net</option>
+                        <option value="org">.org</option>
+                        <option value="xyz">.xyz</option>
+                        <option value="online">.online</option>
+                        <option value="tech">.tech</option>
+                        <option value="ai">.ai / .io</option>
+                        <option value="none">Bebas Semua Ekstensi</option>
+                        <option value="custom">Kustom Sendiri (Ketik Manual)...</option>
+                    </optgroup>
+                </select>
+                <div x-show="tld === 'custom'" x-cloak class="mt-2">
+                    <input type="text" x-model="customTld" placeholder="Contoh: or.id atau namaweb.com" class="w-full text-xs border-slate-300 rounded-lg px-3 py-1.5 focus:ring-emerald-500 focus:border-emerald-500">
+                </div>
+            @endif
         </div>
 
         <!-- Footprint Preset -->
@@ -146,10 +204,25 @@
 
         <!-- Keyword Niche -->
         <div>
-            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5">
-                3. Kata Kunci Niche / Topik
+            <label class="block text-xs font-semibold text-slate-700 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                <span>3. Kata Kunci Niche / Topik</span>
+                @if(!empty($plottedKeywords))
+                    <span class="text-[10px] font-bold text-blue-700 bg-blue-100 px-1.5 py-0.5 rounded border border-blue-300">
+                        Plotting
+                    </span>
+                @endif
             </label>
             <input type="text" x-model="keyword" placeholder="Contoh: kuliner, bisnis, teknologi" class="w-full text-sm border-slate-300 rounded-lg px-3 py-2 focus:ring-emerald-500 focus:border-emerald-500">
+            @if(!empty($plottedKeywords))
+                <div class="mt-1.5 flex flex-wrap items-center gap-1.5">
+                    <span class="text-[11px] text-slate-500 font-medium">Klik keyword:</span>
+                    @foreach($plottedKeywords as $kw)
+                        <button type="button" @click="keyword = '{{ addslashes($kw) }}'" class="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 transition cursor-pointer" title="Pakai keyword ini">
+                            + {{ $kw }}
+                        </button>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 
@@ -177,23 +250,43 @@
 
     <!-- Quick Preset Combinations -->
     <div class="mt-4 pt-3 border-t border-slate-100">
-        <span class="text-xs font-semibold text-slate-500 block mb-2">⚡ Rekomendasi Rumus Siap Pakai:</span>
-        <div class="flex flex-wrap gap-2 text-xs">
-            <button type="button" @click="tld = 'co.id'; footprint = 'tinggalkan komentar'; keyword = 'tips'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
-                Web .co.id + Komentar + "tips"
-            </button>
-            <button type="button" @click="tld = 'web.id'; footprint = 'leave a reply'; keyword = 'bisnis'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
-                Web .web.id + "leave a reply" + "bisnis"
-            </button>
-            <button type="button" @click="tld = '*.blogspot.com'; footprint = 'post a comment'; keyword = 'informasi'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
-                Blogspot + "post a comment"
-            </button>
-            <button type="button" @click="tld = 'sch.id'; footprint = 'tinggalkan komentar'; keyword = 'berita'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
-                Sekolah .sch.id (DA Tinggi)
-            </button>
-            <button type="button" @click="tld = 'ac.id'; footprint = 'leave a reply'; keyword = 'artikel'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
-                Kampus .ac.id (DA Tinggi)
-            </button>
-        </div>
+        @if(!empty($plottedTlds))
+            <span class="text-xs font-semibold text-slate-700 block mb-2">⚡ Rekomendasi Rumus Sesuai Plotting Tugas Anda:</span>
+            <div class="flex flex-wrap gap-2 text-xs">
+                @foreach($plottedTlds as $pt)
+                    @php
+                        $kwDemo = !empty($plottedKeywords) ? $plottedKeywords[0] : '';
+                    @endphp
+                    <button type="button" @click="tld = '{{ $pt }}'; footprint = 'tinggalkan komentar'; keyword = '{{ addslashes($kwDemo) }}'" class="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 transition cursor-pointer">
+                        Web .{{ $pt }} + Komentar {{ $kwDemo ? '+ "'.$kwDemo.'"' : '' }}
+                    </button>
+                    <button type="button" @click="tld = '{{ $pt }}'; footprint = 'leave a reply'; keyword = '{{ addslashes($kwDemo) }}'" class="px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 transition cursor-pointer">
+                        Web .{{ $pt }} + "leave a reply" {{ $kwDemo ? '+ "'.$kwDemo.'"' : '' }}
+                    </button>
+                    <button type="button" @click="tld = '{{ $pt }}'; footprint = 'post a comment'; keyword = '{{ addslashes($kwDemo) }}'" class="px-2.5 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-200 transition cursor-pointer">
+                        Web .{{ $pt }} + "post a comment"
+                    </button>
+                @endforeach
+            </div>
+        @else
+            <span class="text-xs font-semibold text-slate-500 block mb-2">⚡ Rekomendasi Rumus Siap Pakai:</span>
+            <div class="flex flex-wrap gap-2 text-xs">
+                <button type="button" @click="tld = 'co.id'; footprint = 'tinggalkan komentar'; keyword = 'tips'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
+                    Web .co.id + Komentar + "tips"
+                </button>
+                <button type="button" @click="tld = 'web.id'; footprint = 'leave a reply'; keyword = 'bisnis'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
+                    Web .web.id + "leave a reply" + "bisnis"
+                </button>
+                <button type="button" @click="tld = '*.blogspot.com'; footprint = 'post a comment'; keyword = 'informasi'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
+                    Blogspot + "post a comment"
+                </button>
+                <button type="button" @click="tld = 'sch.id'; footprint = 'tinggalkan komentar'; keyword = 'berita'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
+                    Sekolah .sch.id (DA Tinggi)
+                </button>
+                <button type="button" @click="tld = 'ac.id'; footprint = 'leave a reply'; keyword = 'artikel'" class="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition cursor-pointer">
+                    Kampus .ac.id (DA Tinggi)
+                </button>
+            </div>
+        @endif
     </div>
 </div>
