@@ -263,11 +263,42 @@
                 </div>
 
                 <!-- Plotting Ekstensi Domain (TLDs) -->
-                <div>
+                <div class="space-y-2">
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Plotting Ekstensi Domain (TLDs)</label>
-                    <input type="text" name="allowed_tlds" x-model="allowedTlds" placeholder=".co.id, .web.id (Kosongkan jika bebas semua domain)"
-                        class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none font-mono">
-                    <p class="text-[11px] text-slate-400 mt-1">Pisahkan dengan koma. Contoh: <code class="font-mono text-emerald-700">.co.id, .web.id</code> atau <code class="font-mono text-emerald-700">.com, .net</code></p>
+                    <div class="flex flex-wrap gap-1 mb-1">
+                        <button type="button" @click="allowedTlds = ''" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition">✨ Bebas Semua</button>
+                        <button type="button" @click="allowedTlds = '.id, .co.id, .web.id, .my.id, .biz.id'" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition">🇮🇩 Semua .ID</button>
+                        <button type="button" @click="allowedTlds = '.co.id'" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition">🏢 .co.id</button>
+                        <button type="button" @click="allowedTlds = '.com, .net, .org, .info'" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 transition">🌐 Global (.com dll)</button>
+                        <button type="button" @click="allowedTlds = '.ac.id, .sch.id, .edu'" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 transition">🎓 Edu (.ac.id)</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <select @change="if ($event.target.value) { allowedTlds = allowedTlds ? allowedTlds + ', ' + $event.target.value : $event.target.value; $event.target.value = ''; }"
+                            class="w-full px-2.5 py-2 text-xs rounded-xl border border-slate-300 bg-white">
+                            <option value="">➕ Tambah dari Daftar...</option>
+                            <optgroup label="Domain Indonesia">
+                                <option value=".id">.id (Indonesia Utama)</option>
+                                <option value=".co.id">.co.id (Bisnis & Korporat)</option>
+                                <option value=".web.id">.web.id (Web Personal)</option>
+                                <option value=".my.id">.my.id (Personal / Blog)</option>
+                                <option value=".biz.id">.biz.id (UMKM)</option>
+                                <option value=".ac.id">.ac.id (Kampus)</option>
+                                <option value=".sch.id">.sch.id (Sekolah)</option>
+                                <option value=".go.id">.go.id (Pemerintah)</option>
+                            </optgroup>
+                            <optgroup label="Domain Global Populer">
+                                <option value=".com">.com (Komersial)</option>
+                                <option value=".net">.net (Jaringan)</option>
+                                <option value=".org">.org (Organisasi)</option>
+                                <option value=".info">.info (Informasi)</option>
+                                <option value=".xyz">.xyz (Tech)</option>
+                                <option value=".edu">.edu (Edu Global)</option>
+                            </optgroup>
+                        </select>
+                        <input type="text" name="allowed_tlds" x-model="allowedTlds" placeholder="Kosongkan jika bebas semua domain"
+                            class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono">
+                    </div>
+                    <p class="text-[11px] text-slate-400">Pilih dari dropdown atau klik tombol preset di atas.</p>
                 </div>
 
                 <!-- Target Keywords -->

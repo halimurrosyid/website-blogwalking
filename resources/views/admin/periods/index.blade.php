@@ -287,9 +287,41 @@
             <form method="POST" :action="editAssignmentData?.actionUrl" class="space-y-4 text-xs">
                 @csrf
 
-                <div>
+                <div class="space-y-2">
                     <label class="block font-semibold text-slate-700 mb-1">Plotting Ekstensi Domain Target</label>
-                    <input type="text" name="allowed_tlds" x-model="editAssignmentData.allowed_tlds" placeholder="Contoh: .co.id, .web.id (pisahkan koma)" class="w-full text-sm border-slate-300 rounded-lg p-2.5">
+                    <div class="flex flex-wrap gap-1 mb-1">
+                        <button type="button" @click="editAssignmentData.allowed_tlds = ''" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 transition">✨ Bebas Semua</button>
+                        <button type="button" @click="editAssignmentData.allowed_tlds = '.id, .co.id, .web.id, .my.id, .biz.id'" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition">🇮🇩 Semua .ID</button>
+                        <button type="button" @click="editAssignmentData.allowed_tlds = '.co.id'" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 transition">🏢 .co.id</button>
+                        <button type="button" @click="editAssignmentData.allowed_tlds = '.com, .net, .org, .info'" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-300 transition">🌐 Global (.com dll)</button>
+                        <button type="button" @click="editAssignmentData.allowed_tlds = '.ac.id, .sch.id, .edu'" class="px-2 py-0.5 rounded text-[11px] font-semibold bg-purple-50 hover:bg-purple-100 text-purple-800 border border-purple-300 transition">🎓 Edu (.ac.id)</button>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        <select @change="if ($event.target.value) { editAssignmentData.allowed_tlds = editAssignmentData.allowed_tlds ? editAssignmentData.allowed_tlds + ', ' + $event.target.value : $event.target.value; $event.target.value = ''; }"
+                            class="w-full px-2.5 py-2 text-xs rounded-xl border border-slate-300 bg-white">
+                            <option value="">➕ Tambah dari Daftar...</option>
+                            <optgroup label="Domain Indonesia">
+                                <option value=".id">.id (Indonesia Utama)</option>
+                                <option value=".co.id">.co.id (Bisnis & Korporat)</option>
+                                <option value=".web.id">.web.id (Web Personal)</option>
+                                <option value=".my.id">.my.id (Personal / Blog)</option>
+                                <option value=".biz.id">.biz.id (UMKM)</option>
+                                <option value=".ac.id">.ac.id (Kampus)</option>
+                                <option value=".sch.id">.sch.id (Sekolah)</option>
+                                <option value=".go.id">.go.id (Pemerintah)</option>
+                            </optgroup>
+                            <optgroup label="Domain Global Populer">
+                                <option value=".com">.com (Komersial)</option>
+                                <option value=".net">.net (Jaringan)</option>
+                                <option value=".org">.org (Organisasi)</option>
+                                <option value=".info">.info (Informasi)</option>
+                                <option value=".xyz">.xyz (Tech)</option>
+                                <option value=".edu">.edu (Edu Global)</option>
+                            </optgroup>
+                        </select>
+                        <input type="text" name="allowed_tlds" x-model="editAssignmentData.allowed_tlds" placeholder="Kosongkan jika bebas semua domain"
+                            class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono">
+                    </div>
                     <span class="text-slate-400 mt-1 block">Kosongkan jika blogwalker ini boleh bebas komentar di semua ekstensi (.id, .com, dll.).</span>
                 </div>
 

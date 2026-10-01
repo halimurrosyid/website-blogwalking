@@ -69,10 +69,7 @@
                 <label for="allowed_tlds" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
                     Batasan Ekstensi Domain (Opsional)
                 </label>
-                <input type="text" name="allowed_tlds" id="allowed_tlds" value="{{ old('allowed_tlds', '') }}"
-                    class="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 text-sm font-mono"
-                    placeholder="Kosongkan = Bebas Semua Domain">
-                <span class="text-[11px] text-emerald-600 font-semibold mt-1 block">💡 Kosongkan agar blogwalker bisa berkomentar di SEMUA domain (.id, .com, dll.).</span>
+                <x-tld-selector name="allowed_tlds" id="allowed_tlds" :value="old('allowed_tlds', '')" />
             </div>
 
             <div>
