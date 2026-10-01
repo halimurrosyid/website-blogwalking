@@ -93,8 +93,57 @@
                         <li><strong>Plotting Ekstensi Anda:</strong> Menampilkan domain apa saja yang diizinkan untuk Anda kerjakan (misal: <code>.com</code>, <code>.id</code>).</li>
                     </ul>
                 </div>
-                <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
-                    <img src="{{ asset('images/guide/worker_dashboard.png') }}" alt="Dashboard Blogwalker" class="w-full h-auto object-cover">
+                <!-- UI Preview Card: Dashboard Worker -->
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden text-xs">
+                    <div class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                            <span class="ml-2 font-mono text-[11px] text-slate-300 font-semibold">Dashboard Utama Blogwalker</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Akun Aktif</span>
+                    </div>
+                    <div class="p-4 space-y-3.5 bg-slate-50/50">
+                        <div class="flex items-center justify-between bg-white p-3 rounded-xl border border-slate-200 shadow-xs">
+                            <div>
+                                <div class="text-[11px] text-slate-500">Halo, Blogwalker</div>
+                                <div class="font-extrabold text-sm text-slate-900">Budi Pratama</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-[11px] text-slate-500">Komisi Disetujui</div>
+                                <div class="font-extrabold text-sm text-emerald-600 font-mono">Rp 48.750</div>
+                            </div>
+                        </div>
+                        <div class="p-2.5 bg-amber-500/10 border border-amber-300/60 rounded-xl text-amber-900 flex items-center justify-between text-[11px]">
+                            <span class="font-bold flex items-center gap-1.5">
+                                <span>⏳</span> Periode: Oktober 2026
+                            </span>
+                            <span class="font-bold px-2 py-0.5 bg-amber-200 text-amber-900 rounded-md text-[10px]">Tersisa 12 Hari</span>
+                        </div>
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs space-y-2">
+                            <div class="flex justify-between items-center text-[11px]">
+                                <span class="font-bold text-slate-800">Target: 100 Komentar</span>
+                                <span class="font-bold text-emerald-600 font-mono">65 / 100 (65%)</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                                <div class="bg-emerald-600 h-2.5 rounded-full" style="width: 65%"></div>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-slate-500 pt-0.5">
+                                <span>✓ 65 Disetujui</span>
+                                <span>⏳ 4 Pending</span>
+                                <span>🎯 Butuh 35 Lagi</span>
+                            </div>
+                        </div>
+                        <div class="bg-white p-2.5 rounded-xl border border-slate-200 text-[11px] flex items-center justify-between">
+                            <span class="text-slate-600 font-medium">Plotting Ekstensi Anda:</span>
+                            <div class="flex gap-1.5 font-mono font-bold text-[10px]">
+                                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700">.co.id</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700">.web.id</span>
+                                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700">.id</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -110,9 +159,47 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 order-2 lg:order-1">
-                    <img src="{{ asset('images/guide/worker_target_claim.png') }}" alt="Daftar Target URL Blogwalker" class="w-full h-auto object-cover">
+                <!-- UI Preview Card: Ambil Target -->
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden text-xs order-2 lg:order-1">
+                    <div class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                            <span class="ml-2 font-mono text-[11px] text-slate-300 font-semibold">Antrean Target URL</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 text-[10px] font-bold">Anti-Tabrakan</span>
+                    </div>
+                    <div class="p-3.5 space-y-2.5 bg-slate-50/50">
+                        <div class="p-3 bg-white rounded-xl border border-slate-200 shadow-xs space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">Tersedia</span>
+                                <span class="font-mono font-bold text-emerald-700 text-[11px]">Tarif: Rp 750</span>
+                            </div>
+                            <div class="space-y-0.5">
+                                <div class="text-[10px] text-slate-400">Target Website:</div>
+                                <div class="font-mono font-bold text-slate-900 text-[11px] truncate">https://beritaekonomi.co.id/bisnis-digital</div>
+                            </div>
+                            <div class="bg-slate-50 p-2 rounded-lg text-[10px] text-slate-600 space-y-0.5 border border-slate-100">
+                                <div><strong>Klien:</strong> https://solusi-seo.com/jasa-backlink</div>
+                                <div><strong>Keyword:</strong> jasa backlink terpercaya</div>
+                            </div>
+                            <div class="flex gap-2 pt-0.5">
+                                <button type="button" class="flex-1 py-1.5 px-3 bg-emerald-600 text-white font-bold rounded-lg text-[11px] flex items-center justify-center gap-1 shadow-xs pointer-events-none">
+                                    <span>🔒 Ambil Tugas (Kunci 2 Jam)</span>
+                                </button>
+                                <button type="button" class="py-1.5 px-2.5 bg-slate-100 text-slate-600 font-bold rounded-lg text-[10px] pointer-events-none">
+                                    Lewati
+                                </button>
+                            </div>
+                        </div>
+                        <div class="text-[10px] text-slate-500 text-center flex items-center justify-center gap-1">
+                            <svg class="w-3.5 h-3.5 text-emerald-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path></svg>
+                            Tugas otomatis terkunci 2 jam eksklusif untuk akun Anda
+                        </div>
+                    </div>
                 </div>
+
                 <div class="space-y-3 text-xs text-slate-600 leading-relaxed order-1 lg:order-2">
                     <p>Buka menu <strong>Antrean Target URL</strong>:</p>
                     <div class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] leading-relaxed">
@@ -148,8 +235,44 @@
                         <li><strong>Kirim Formulir:</strong> Tempelkan screenshot dan klik tombol hijau <strong>"Kirim Bukti Pengerjaan"</strong>.</li>
                     </ol>
                 </div>
-                <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
-                    <img src="{{ asset('images/guide/worker_submission_form.png') }}" alt="Formulir Kirim Bukti Blogwalker" class="w-full h-auto object-cover">
+                <!-- UI Preview Card: Formulir Bukti -->
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden text-xs">
+                    <div class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                            <span class="ml-2 font-mono text-[11px] text-slate-300 font-semibold">Formulir Kirim Bukti</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Sisa Waktu: 01:45:20</span>
+                    </div>
+                    <div class="p-4 space-y-2.5 bg-slate-50/50">
+                        <div>
+                            <label class="block font-bold text-slate-700 text-[10px] mb-1">Target URL Terkunci:</label>
+                            <div class="p-2 bg-slate-100 rounded-lg text-slate-600 font-mono text-[10px] border border-slate-200 flex items-center justify-between">
+                                <span class="truncate">https://beritaekonomi.co.id/bisnis-digital</span>
+                                <span class="text-slate-400 text-xs">🔒</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 text-[10px] mb-1">Live URL Artikel / Komentar:</label>
+                            <div class="p-2 bg-white rounded-lg text-slate-900 font-mono text-[10px] border border-emerald-500 shadow-xs">
+                                https://beritaekonomi.co.id/bisnis-digital#comment-104
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-700 text-[10px] mb-1">Unggah Screenshot Bukti Komentar:</label>
+                            <div class="p-3 bg-white rounded-xl border border-dashed border-emerald-500 text-center space-y-0.5">
+                                <div class="text-emerald-700 font-bold text-[10px] flex items-center justify-center gap-1">
+                                    <span>🖼️</span> bukti_komentar_beritaekonomi.png
+                                </div>
+                                <div class="text-slate-400 text-[9px]">Ukuran: 184 KB • Gambar valid</div>
+                            </div>
+                        </div>
+                        <button type="button" class="w-full py-2 bg-emerald-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-xs pointer-events-none">
+                            <span>✓ Kirim Bukti Pengerjaan</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -353,8 +476,44 @@
                         <li><strong>Target Minimal per Anggota:</strong> Tentukan standar batas minimal agar anggota tim tetap aktif di periode berikutnya.</li>
                     </ul>
                 </div>
-                <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
-                    <img src="{{ asset('images/guide/admin_period_settings.png') }}" alt="Pengaturan Periode Admin" class="w-full h-auto object-cover">
+                <!-- UI Preview Card: Periode & Kuota -->
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden text-xs">
+                    <div class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                            <span class="ml-2 font-mono text-[11px] text-slate-300 font-semibold">Konfigurasi Periode & Batasan Kuota</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Periode Aktif</span>
+                    </div>
+                    <div class="p-4 space-y-3 bg-slate-50/50">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="p-3 bg-white rounded-xl border border-slate-200">
+                                <label class="block text-slate-500 text-[10px] font-medium">Target Minimal / User:</label>
+                                <div class="font-extrabold text-slate-900 text-base font-mono">100 <span class="text-xs font-normal text-slate-400">komentar</span></div>
+                            </div>
+                            <div class="p-3 bg-white rounded-xl border border-emerald-500/60 shadow-xs">
+                                <label class="block text-emerald-700 text-[10px] font-bold">Maks. URL per Domain:</label>
+                                <div class="font-extrabold text-emerald-700 text-base font-mono">2 <span class="text-xs font-normal text-emerald-600/70">URL / domain</span></div>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-[11px]">
+                            <div>
+                                <span class="text-slate-500 block text-[10px]">Rentang Waktu Periode:</span>
+                                <span class="font-bold text-slate-800">01 Oktober 2026 &mdash; 31 Oktober 2026</span>
+                            </div>
+                            <span class="px-2 py-1 rounded bg-slate-100 text-slate-700 font-bold text-[10px]">Aktif</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button type="button" class="flex-1 py-1.5 bg-slate-900 text-white font-bold rounded-lg text-[11px] pointer-events-none">
+                                Simpan Konfigurasi
+                            </button>
+                            <button type="button" class="py-1.5 px-3 bg-rose-600 text-white font-bold rounded-lg text-[11px] pointer-events-none">
+                                Tutup & Evaluasi Periode
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -370,9 +529,64 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 order-2 lg:order-1">
-                    <img src="{{ asset('images/guide/admin_target_queue.png') }}" alt="Antrean Target URL Admin" class="w-full h-auto object-cover">
+                <!-- UI Preview Card: Checklist Massal -->
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden text-xs order-2 lg:order-1">
+                    <div class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                            <span class="ml-2 font-mono text-[11px] text-slate-300 font-semibold">Antrean Target URL</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">+ Input Massal</span>
+                    </div>
+                    <div class="p-3 bg-slate-50/50 space-y-2">
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                            <table class="w-full text-[11px] text-left">
+                                <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-2 w-6 text-center"><input type="checkbox" checked class="rounded text-emerald-600 pointer-events-none"></th>
+                                        <th class="p-2">Target URL</th>
+                                        <th class="p-2">Root Domain</th>
+                                        <th class="p-2">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <tr class="bg-emerald-50/30">
+                                        <td class="p-2 text-center"><input type="checkbox" checked class="rounded text-emerald-600 pointer-events-none"></td>
+                                        <td class="p-2 font-mono text-slate-800 truncate max-w-[120px]">teknoviral.com/ai-tools</td>
+                                        <td class="p-2 font-mono text-slate-600">teknoviral.com</td>
+                                        <td class="p-2"><span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">Tersedia</span></td>
+                                    </tr>
+                                    <tr class="bg-emerald-50/30">
+                                        <td class="p-2 text-center"><input type="checkbox" checked class="rounded text-emerald-600 pointer-events-none"></td>
+                                        <td class="p-2 font-mono text-slate-800 truncate max-w-[120px]">beritapro.co.id/tips</td>
+                                        <td class="p-2 font-mono text-slate-600">beritapro.co.id</td>
+                                        <td class="p-2"><span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 text-[10px] font-bold">Tersedia</span></td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 text-center"><input type="checkbox" class="rounded text-slate-300 pointer-events-none"></td>
+                                        <td class="p-2 font-mono text-slate-400 truncate max-w-[120px]">mediaukm.id/info</td>
+                                        <td class="p-2 font-mono text-slate-400">mediaukm.id</td>
+                                        <td class="p-2"><span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 text-[10px] font-semibold">Domain Penuh</span></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="p-2 bg-slate-900 text-white rounded-xl flex items-center justify-between text-[11px] shadow-sm">
+                            <span class="font-bold flex items-center gap-1.5 pl-1">
+                                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                                <span>2 Target Dipilih:</span>
+                            </span>
+                            <div class="flex gap-1.5">
+                                <span class="px-2 py-0.5 rounded bg-emerald-600 text-white font-bold text-[10px]">Aktifkan</span>
+                                <span class="px-2 py-0.5 rounded bg-amber-600 text-white font-bold text-[10px]">Lewati</span>
+                                <span class="px-2 py-0.5 rounded bg-rose-600 text-white font-bold text-[10px]">Hapus</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
                 <div class="space-y-3 text-xs text-slate-600 leading-relaxed order-1 lg:order-2">
                     <p>Buka menu <strong>Operasional & Target &rarr; Antrean Target URL</strong>:</p>
                     <ol class="list-decimal list-inside space-y-1.5 ml-1">
@@ -410,8 +624,49 @@
                         <li><strong>Export CSV:</strong> Unduh daftar link yang sudah disetujui untuk diserahkan ke klien sebagai bukti laporan pekerjaan.</li>
                     </ul>
                 </div>
-                <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50">
-                    <img src="{{ asset('images/guide/admin_review_queue.png') }}" alt="Antrean Verifikasi Admin" class="w-full h-auto object-cover">
+                <!-- UI Preview Card: Verifikasi Tugas -->
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden text-xs">
+                    <div class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                            <span class="ml-2 font-mono text-[11px] text-slate-300 font-semibold">Verifikasi Tugas & Misi</span>
+                        </div>
+                        <div class="flex gap-1.5">
+                            <span class="px-2 py-0.5 rounded bg-emerald-600 text-white text-[10px] font-bold">✓ Bulk Approve</span>
+                            <span class="px-2 py-0.5 rounded bg-slate-800 text-slate-200 text-[10px] font-bold">Export CSV</span>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-slate-50/50 space-y-2">
+                        <div class="bg-white p-3 rounded-xl border border-slate-200 shadow-xs space-y-2">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="font-bold text-slate-900 text-[11px]">Budi Pratama</span>
+                                    <span class="text-slate-400 text-[10px]">• 5 menit lalu</span>
+                                </div>
+                                <span class="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px]">Menunggu Review</span>
+                            </div>
+                            <div class="flex gap-3 items-center">
+                                <div class="w-16 h-12 rounded-lg bg-slate-800 text-white flex flex-col items-center justify-center shrink-0 border border-slate-200 text-[9px]">
+                                    <span>🖼️ Zoom</span>
+                                    <span class="text-[8px] text-slate-400">Bukti Live</span>
+                                </div>
+                                <div class="text-[11px] space-y-0.5 min-w-0">
+                                    <div class="font-mono text-slate-800 truncate">https://beritaekonomi.co.id/bisnis-digital</div>
+                                    <div class="text-slate-500 text-[10px]">Klien: solusi-seo.com • Tarif: <strong class="text-emerald-600">Rp 750</strong></div>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 pt-0.5">
+                                <button type="button" class="flex-1 py-1 bg-emerald-600 text-white font-bold rounded-lg text-[10px] flex items-center justify-center gap-1 pointer-events-none">
+                                    <span>✓ Setujui</span>
+                                </button>
+                                <button type="button" class="py-1 px-3 bg-rose-600 text-white font-bold rounded-lg text-[10px] pointer-events-none">
+                                    Tolak
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -427,9 +682,54 @@
             </div>
 
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
-                <div class="rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-50 order-2 lg:order-1">
-                    <img src="{{ asset('images/guide/admin_domain_monitoring.png') }}" alt="Monitoring Domain dan Kuota" class="w-full h-auto object-cover">
+                <!-- UI Preview Card: Domain Monitoring -->
+                <div class="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden text-xs order-2 lg:order-1">
+                    <div class="bg-slate-900 text-white px-4 py-2.5 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2.5 h-2.5 rounded-full bg-rose-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-amber-400"></span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+                            <span class="ml-2 font-mono text-[11px] text-slate-300 font-semibold">Monitoring Domain & Kuota Dikerjakan</span>
+                        </div>
+                        <span class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 text-[10px] font-bold">⚡ Cek SEO Terpilih</span>
+                    </div>
+                    <div class="p-3 bg-slate-50/50 space-y-2">
+                        <div class="p-2 bg-emerald-50 rounded-lg text-emerald-900 text-[10px] flex items-center gap-1.5 border border-emerald-200">
+                            <span>✓</span>
+                            <span>Hanya mencatat domain yang <strong>sudah riil dikerjakan</strong> (bukan stok target mentah).</span>
+                        </div>
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+                            <table class="w-full text-[10px] text-left">
+                                <thead class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-2">Root Domain</th>
+                                        <th class="p-2">Kuota</th>
+                                        <th class="p-2">Moz DA</th>
+                                        <th class="p-2">Ahrefs DR</th>
+                                        <th class="p-2">Subnet IP</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 font-mono">
+                                    <tr>
+                                        <td class="p-2 font-bold text-slate-900">portalberita.co.id</td>
+                                        <td class="p-2"><span class="px-1.5 py-0.5 rounded bg-rose-100 text-rose-800 font-bold">2/2 (Penuh)</span></td>
+                                        <td class="p-2 text-indigo-600 font-bold">DA 42</td>
+                                        <td class="p-2 text-orange-600 font-bold">DR 51</td>
+                                        <td class="p-2 text-slate-500">104.21.48.0/24</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="p-2 font-bold text-slate-900">bisnisupdate.com</td>
+                                        <td class="p-2"><span class="px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">1/2 (Aktif)</span></td>
+                                        <td class="p-2 text-indigo-600 font-bold">DA 38</td>
+                                        <td class="p-2 text-orange-600 font-bold">DR 44</td>
+                                        <td class="p-2 text-slate-500">172.67.182.0/24</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
+
                 <div class="space-y-3 text-xs text-slate-600 leading-relaxed order-1 lg:order-2">
                     <p>Buka menu <strong>Operasional & Target &rarr; Monitoring Domain & Kuota</strong>:</p>
                     <div class="p-3 bg-slate-100 rounded-xl text-slate-700 text-[11px] leading-relaxed">
