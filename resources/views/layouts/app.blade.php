@@ -93,10 +93,25 @@
                     
                     @if(auth()->user()->isAdmin())
                         @php
-                            $pendingCount = \App\Models\Submission::where('review_status', 'pending')->count();
-                            $pendingRegCount = \App\Models\User::where('role', 'blogwalker')->where('approval_status', 'pending')->count();
-                            $pendingProfileChangeCount = \App\Models\ProfileChangeRequest::where('status', 'pending')->count();
-                            $availableTargetsCount = \App\Models\TargetUrl::available()->count();
+                            try {
+                                $pendingCount = \Illuminate\Support\Facades\Schema::hasTable('submissions') 
+                                    ? \App\Models\Submission::where('review_status', 'pending')->count() 
+                                    : 0;
+                                $pendingRegCount = \Illuminate\Support\Facades\Schema::hasTable('users') 
+                                    ? \App\Models\User::where('role', 'blogwalker')->where('approval_status', 'pending')->count() 
+                                    : 0;
+                                $pendingProfileChangeCount = \Illuminate\Support\Facades\Schema::hasTable('profile_change_requests') 
+                                    ? \App\Models\ProfileChangeRequest::where('status', 'pending')->count() 
+                                    : 0;
+                                $availableTargetsCount = \Illuminate\Support\Facades\Schema::hasTable('target_urls') 
+                                    ? \App\Models\TargetUrl::available()->count() 
+                                    : 0;
+                            } catch (\Throwable $e) {
+                                $pendingCount = 0;
+                                $pendingRegCount = 0;
+                                $pendingProfileChangeCount = 0;
+                                $availableTargetsCount = 0;
+                            }
                         @endphp
 
                         <!-- GRUP: UTAMA -->
@@ -348,7 +363,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
                             </svg>
                             @php
-                                $totalPendingReviews = \App\Models\Submission::where('review_status', 'pending')->count();
+                                $totalPendingReviews = $pendingCount ?? 0;
                             @endphp
                             @if($totalPendingReviews > 0)
                                 <span class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white"></span>

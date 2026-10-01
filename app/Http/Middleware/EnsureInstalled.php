@@ -52,7 +52,7 @@ class EnsureInstalled
      */
     protected function ensureDatabaseUpToDate(): void
     {
-        $markerFile = storage_path('framework/schema_v7.migrated');
+        $markerFile = storage_path('framework/schema_v8.migrated');
 
         if (file_exists($markerFile)) {
             return;
@@ -62,6 +62,7 @@ class EnsureInstalled
             // Check if essential tables or columns exist; if any are missing, run migrate
             if (! Schema::hasTable('periods') ||
                 ! Schema::hasTable('app_settings') ||
+                ! Schema::hasTable('profile_change_requests') ||
                 ! Schema::hasColumn('domains', 'ip_subnet') ||
                 ! Schema::hasColumn('domains', 'da') ||
                 ! Schema::hasColumn('submissions', 'period_id') ||
