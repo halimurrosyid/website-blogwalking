@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Persetujuan Ganti Rekening & Profil')
+@section('title', 'Perubahan Profil & Rekening')
 
 @section('content')
 <div class="space-y-6" x-data="{
@@ -24,7 +24,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Persetujuan Ganti Rekening & Profil</h1>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Perubahan Profil & Rekening</h1>
             <p class="text-sm text-slate-500 mt-0.5">Verifikasi dan setujui permohonan perubahan rekening bank dan nama worker demi keamanan payroll.</p>
         </div>
         <div class="flex items-center gap-2">

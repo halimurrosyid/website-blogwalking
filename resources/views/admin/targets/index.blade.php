@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Pool Target URL Komentar')
+@section('title', 'Antrean Target URL')
 
 @section('content')
 <div class="space-y-6" x-data="{
@@ -16,8 +16,8 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Pool Target URL Komentar</h1>
-            <p class="text-sm text-slate-500 mt-1">Daftar URL / subdomain yang siap dikerjakan oleh tim Blogwalker.</p>
+            <h1 class="text-2xl font-bold text-slate-900 tracking-tight">Antrean Target URL</h1>
+            <p class="text-sm text-slate-500 mt-1">Daftar link website yang siap dikerjakan oleh tim Blogwalker.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
             <a href="{{ route('admin.targets.create') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold shadow-xs transition">

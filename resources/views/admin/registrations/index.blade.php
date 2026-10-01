@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Verifikasi Pendaftaran Blogwalker')
+@section('title', 'Verifikasi Pendaftar Baru')
 
 @section('content')
 <div class="space-y-6" x-data="{
@@ -41,7 +41,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900">Verifikasi Pendaftaran Blogwalker</h1>
+            <h1 class="text-2xl font-bold text-slate-900">Verifikasi Pendaftar Baru</h1>
             <p class="text-sm text-slate-500 mt-1">
                 Tinjau foto KTP, data rekening bank konvensional, dan setujui atau tolak pendaftaran calon blogwalker.
             </p>

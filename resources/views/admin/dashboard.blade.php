@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Admin Dashboard')
+@section('title', 'Dashboard Utama')
 
 @section('content')
 <div class="space-y-6" x-data="{ lightboxOpen: false, lightboxImg: '', rejectModalOpen: false, rejectUrl: '' }">

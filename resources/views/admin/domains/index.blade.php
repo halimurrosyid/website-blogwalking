@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Master Domain & Kuota')
+@section('title', 'Monitoring Domain & Kuota')
 
 @section('content')
 <div class="space-y-6" x-data="{
@@ -70,7 +70,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <div class="flex items-center gap-2.5">
-                <h1 class="text-2xl font-bold text-slate-900">Database Domain & Kuota URL</h1>
+                <h1 class="text-2xl font-bold text-slate-900">Monitoring Domain & Kuota</h1>
                 <div class="flex items-center gap-1 text-[11px] font-semibold">
                     <span class="px-2 py-0.5 rounded-full {{ $seoProviders['moz'] ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500' }}" title="{{ $seoProviders['moz'] ? 'Moz API Aktif' : 'Moz API belum diisi' }}">
                         Moz: {{ $seoProviders['moz'] ? '● Aktif' : '○ Nonaktif' }}

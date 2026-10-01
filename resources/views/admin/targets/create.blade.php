@@ -8,7 +8,7 @@
     <div class="flex items-center justify-between">
         <div>
             <div class="flex items-center gap-2 text-xs text-slate-500 mb-1">
-                <a href="{{ route('admin.targets.index') }}" class="hover:text-emerald-700">Pool Target URL</a>
+                <a href="{{ route('admin.targets.index') }}" class="hover:text-emerald-700">Antrean Target URL</a>
                 <span>&rsaquo;</span>
                 <span class="text-slate-800 font-medium">Input Massal</span>
             </div>

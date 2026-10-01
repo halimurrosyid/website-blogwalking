@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Rekap Gaji & Payroll')
+@section('title', 'Pembayaran & Payroll')
 
 @section('content')
 <div class="space-y-6" x-data="{
@@ -16,7 +16,7 @@
     <!-- Header -->
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold text-slate-900">Rekap Gaji & Pembayaran Worker</h1>
+            <h1 class="text-2xl font-bold text-slate-900">Pembayaran & Payroll Tim</h1>
             <p class="text-sm text-slate-500 mt-1">Daftar komisi komentar yang disetujui dan siap ditransfer ke anggota tim.</p>
         </div>
     </div>
