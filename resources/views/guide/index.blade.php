@@ -184,9 +184,139 @@
                         Ganti Rekening Bank (Menu Profil & Rekening):
                     </div>
                     <p class="text-slate-600 leading-relaxed">
-                        Demi keamanan payroll, pergantian rekening bank memerlukan persetujuan Super Admin. Silakan pilih bank baru dan ketikkan nomor rekening Anda, lalu tunggu admin memvalidasi permohonan tersebut.
+                        Demi keamanan payroll (anti-fraud), pergantian rekening bank memerlukan persetujuan Super Admin. Silakan pilih bank baru dan ketikkan nomor rekening Anda, lalu tunggu admin memvalidasi permohonan tersebut sebelum pencairan berikutnya.
                     </p>
                 </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Standar Kualitas Bukti & Kriteria Anti-Tolak -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-xl bg-emerald-600 text-white font-bold text-sm flex items-center justify-center shrink-0">5</span>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Standar Kualitas Screenshot & Kriteria Anti-Tolak (Anti-Reject)</h2>
+                    <p class="text-xs text-slate-500">Panduan visual agar setiap bukti tugas yang Anda kirimkan 100% lolos verifikasi admin.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                <!-- Checklist Sah -->
+                <div class="p-4 bg-emerald-50/60 border border-emerald-200 rounded-2xl space-y-2.5">
+                    <div class="flex items-center gap-2 text-emerald-900 font-bold text-sm">
+                        <svg class="w-5 h-5 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Kriteria Bukti Sah (Disetujui)</span>
+                    </div>
+                    <ul class="space-y-2 text-emerald-950 leading-relaxed">
+                        <li class="flex items-start gap-2">
+                            <span class="text-emerald-600 font-bold shrink-0">✓</span>
+                            <span><strong>Komentar Terlihat Jelas:</strong> Menampilkan paragraf opini yang relevan dengan topik artikel blog.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-emerald-600 font-bold shrink-0">✓</span>
+                            <span><strong>Backlink Klien Aktif:</strong> Link menuju website klien aktif terpasang pada anchor text atau kolom nama pengomentar.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-emerald-600 font-bold shrink-0">✓</span>
+                            <span><strong>Status Komentar Live:</strong> Komentar sudah muncul di halaman publik blog tanpa tulisan peringatan moderasi.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-emerald-600 font-bold shrink-0">✓</span>
+                            <span><strong>Live URL Akurat:</strong> Tautan yang disalin adalah link artikel tempat komentar berada (bukan sekadar homepage).</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Checklist Ditolak -->
+                <div class="p-4 bg-rose-50/60 border border-rose-200 rounded-2xl space-y-2.5">
+                    <div class="flex items-center gap-2 text-rose-900 font-bold text-sm">
+                        <svg class="w-5 h-5 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <span>Penyebab Tugas Ditolak (Reject)</span>
+                    </div>
+                    <ul class="space-y-2 text-rose-950 leading-relaxed">
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-600 font-bold shrink-0">✗</span>
+                            <span><strong>Komentar Tertahan Moderasi:</strong> Masih terdapat keterangan <em>"Your comment is awaiting moderation"</em> (untuk tipe tugas Approved Live).</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-600 font-bold shrink-0">✗</span>
+                            <span><strong>Gambar Buram / Terpotong:</strong> Screenshot beresolusi terlalu rendah, teks terpotong, atau tidak menunjukkan isi komentar.</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-600 font-bold shrink-0">✗</span>
+                            <span><strong>Salah Link Klien / Spam:</strong> Link klien tidak ada, salah mengetik URL, atau komentar hanya 1-2 kata umum (misal: <em>"nice info gan"</em>).</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-rose-600 font-bold shrink-0">✗</span>
+                            <span><strong>Duplikat / Mengulang Domain Penuh:</strong> Menaruh komentar berulang pada domain yang kuotanya sudah habis.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 6: Jenis Tugas, Skema Tarif & Kebijakan Dispensasi -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-xl bg-emerald-600 text-white font-bold text-sm flex items-center justify-center shrink-0">6</span>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Variasi Jenis Tugas, Tarif Komisi & Prosedur Dispensasi</h2>
+                    <p class="text-xs text-slate-500">Mengenal tipe pengerjaan, estimasi komisi, dan solusi jika akun terkena suspensi.</p>
+                </div>
+            </div>
+
+            <!-- Tipe Tugas Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <div class="font-bold text-slate-900 flex items-center justify-between">
+                        <span>💬 Komentar Blog Standar</span>
+                        <span class="text-emerald-700 font-mono text-[11px] font-bold">~Rp 750</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] leading-relaxed">Menulis komentar relevan di website blog dengan menyisipkan link/nama klien.</p>
+                </div>
+
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <div class="font-bold text-slate-900 flex items-center justify-between">
+                        <span>⭐ Komentar High DA/DR</span>
+                        <span class="text-emerald-700 font-mono text-[11px] font-bold">~Rp 1.000</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] leading-relaxed">Komentar di portal berita atau website dengan otoritas Domain Rating (DR) tinggi.</p>
+                </div>
+
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <div class="font-bold text-slate-900 flex items-center justify-between">
+                        <span>📱 Media Sosial & Forum</span>
+                        <span class="text-emerald-700 font-mono text-[11px] font-bold">~Rp 1.500</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] leading-relaxed">Interaksi alami di forum tanya jawab, thread komunitas, atau media sosial.</p>
+                </div>
+
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <div class="font-bold text-slate-900 flex items-center justify-between">
+                        <span>📝 Guest Post / Kontributor</span>
+                        <span class="text-emerald-700 font-mono text-[11px] font-bold">~Rp 2.000</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] leading-relaxed">Mengirimkan artikel artikel kontributor lengkap yang memuat link backlink klien.</p>
+                </div>
+
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1 sm:col-span-2 lg:col-span-2">
+                    <div class="font-bold text-slate-900 flex items-center justify-between">
+                        <span>✍️ Penulisan Artikel Internal</span>
+                        <span class="text-emerald-700 font-mono text-[11px] font-bold">~Rp 10.000</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] leading-relaxed">Pembuatan draft artikel SEO orisinal 500–1000 kata untuk konten aset internal klien.</p>
+                </div>
+            </div>
+
+            <!-- Box Dispensasi -->
+            <div class="p-4 bg-amber-50 border border-amber-200 rounded-2xl text-amber-950 text-xs space-y-2">
+                <div class="font-bold flex items-center gap-2 text-sm text-amber-900">
+                    <svg class="w-4 h-4 text-amber-600" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path></svg>
+                    <span>Bagaimana Jika Akun Ditangguhkan Karena Tidak Mencapai Target Minimal?</span>
+                </div>
+                <p class="leading-relaxed">
+                    Setiap akhir bulan dilakukan evaluasi otomatis. Anggota yang tidak mencapai batas target minimal akan ditangguhkan (*disqualified*) pada periode berikutnya. Namun, jika Anda mengalami kendala kesehatan (sakit) atau urusan darurat, Anda dapat <strong>mengajukan permohonan dispensasi kepada Super Admin</strong>. Admin memiliki wewenang untuk memberikan status dispensasi sehingga akun Anda langsung aktif kembali.
+                </p>
             </div>
         </div>
 
@@ -345,6 +475,87 @@
             </div>
         </div>
 
+        <!-- Section F: Evaluasi Periode Bulanan (Rollover) & Dispensasi -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0">6</span>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Evaluasi Periode Bulanan (Tutup Buku) & Pemberian Dispensasi</h2>
+                    <p class="text-xs text-slate-500">Mekanisme otomatis tutup buku, plotting ke periode berikutnya, dan perlakuan anggota berstatus suspensi.</p>
+                </div>
+            </div>
+
+            <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+                <p>Ketika bulan kerja berakhir, buka menu <strong>Operasional & Target &rarr; Periode & Target Bulanan</strong> lalu klik tombol <code>Tutup & Evaluasi Periode</code>:</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-1.5">
+                        <div class="font-bold text-emerald-950 flex items-center gap-1.5">
+                            <span class="text-emerald-600">✓</span> Anggota Lolos Target (Qualified):
+                        </div>
+                        <p class="text-slate-600">
+                            Anggota yang menyelesaikan komentar &ge; target minimal otomatis diikutsertakan (*enrolled*) ke periode baru beserta pengaturan plotting TLD & instruksinya.
+                        </p>
+                    </div>
+                    <div class="p-4 bg-rose-50/70 border border-rose-200 rounded-xl space-y-1.5">
+                        <div class="font-bold text-rose-950 flex items-center gap-1.5">
+                            <span class="text-rose-600">✗</span> Anggota Tidak Lolos (Disqualified):
+                        </div>
+                        <p class="text-slate-600">
+                            Akun otomatis disuspensi (ditangguhkan) untuk periode berikutnya sehingga tidak dapat mengambil maupun mengirimkan tugas.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <span class="font-bold text-slate-900">Fitur Pemberian Dispensasi Admin:</span>
+                    <p class="text-slate-600">
+                        Jika ada anggota tim yang tidak mencapai target karena izin sakit atau keperluan darurat yang sah, Super Admin dapat mengklik tombol <strong>"Beri Dispensasi"</strong> pada baris nama anggota tersebut dan mengetikkan alasan. Status anggota akan seketika berubah menjadi <em>Dispensed</em> dan hak akses tugasnya kembali terbuka normal.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section G: Pemeliharaan Sistem & Backup (Zero-Terminal) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0">7</span>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Pemeliharaan Hosting & Cadangan Data (Zero-Terminal)</h2>
+                    <p class="text-xs text-slate-500">Operasional cPanel / shared hosting tanpa perlu menyentuh command line atau terminal SSH.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>💾 Backup Database (.SQL)</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] leading-relaxed">Unduh salinan cadangan seluruh tabel database hanya dengan 1 klik.</p>
+                </div>
+
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>📦 Backup Lengkap (.ZIP)</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] leading-relaxed">Mendownload arsip zip berisi database beserta seluruh file upload screenshot & dokumen.</p>
+                </div>
+
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>⚡ Bersihkan Cache</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] leading-relaxed">Menghapus cache konfigurasi, routing, dan blade views jika ada tampilan yang belum update.</p>
+                </div>
+
+                <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
+                    <div class="font-bold text-slate-900 flex items-center gap-1.5">
+                        <span>🔗 Perbaiki Storage Link</span>
+                    </div>
+                    <p class="text-slate-500 text-[11px] leading-relaxed">Menghubungkan folder upload publik cPanel tanpa ketergantungan symlink manual.</p>
+                </div>
+            </div>
+        </div>
+
     </div>
     @endif
 
@@ -372,6 +583,15 @@
 
             <div class="py-4">
                 <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                    <span class="text-emerald-600">Q:</span> Kapan jadwal pencairan komisi (payroll) dan bagaimana cara kerjanya?
+                </h3>
+                <p class="text-xs text-slate-600 mt-1.5 leading-relaxed pl-6">
+                    Pencairan komisi diproses oleh Super Admin melalui menu <em>Pembayaran & Payroll</em>. Seluruh tugas dengan status <strong>Disetujui</strong> akan diakumulasikan ke saldo yang siap dibayarkan. Admin mentransfer langsung ke nomor rekening terdaftar Anda dan mengunggah bukti transfer ke sistem.
+                </p>
+            </div>
+
+            <div class="py-4">
+                <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
                     <span class="text-emerald-600">Q:</span> Apakah Blogwalker bisa mencari website target sendiri di luar antrean admin?
                 </h3>
                 <p class="text-xs text-slate-600 mt-1.5 leading-relaxed pl-6">
@@ -388,12 +608,30 @@
                 </p>
             </div>
 
-            <div class="py-4 last:pb-0">
+            <div class="py-4">
+                <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                    <span class="text-emerald-600">Q:</span> Bagaimana jika Super Admin ingin menaikkan atau menurunkan kuota domain tertentu saja?
+                </h3>
+                <p class="text-xs text-slate-600 mt-1.5 leading-relaxed pl-6">
+                    Buka menu <em>Monitoring Domain & Kuota</em>. Admin dapat mengklik tombol kuota pada baris domain yang diinginkan untuk mengubah nilai batas maksimal secara custom, atau menggunakan fitur <strong>Ubah Kuota Massal</strong>.
+                </p>
+            </div>
+
+            <div class="py-4">
                 <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
                     <span class="text-emerald-600">Q:</span> Bagaimana jika Super Admin menginput ribuan link target sekaligus?
                 </h3>
                 <p class="text-xs text-slate-600 mt-1.5 leading-relaxed pl-6">
                     Sistem sudah dioptimasi menggunakan <em>in-memory chunking</em> dan mendukung upload dokumen <code>.txt</code> / <code>.csv</code> hingga 10 MB. Proses impor 1.000–5.000 link selesai instan dalam hitungan detik tanpa resiko *504 Gateway Time-out*.
+                </p>
+            </div>
+
+            <div class="py-4 last:pb-0">
+                <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                    <span class="text-emerald-600">Q:</span> Apakah file upload bukti screenshot dan gambar KTP aman di server?
+                </h3>
+                <p class="text-xs text-slate-600 mt-1.5 leading-relaxed pl-6">
+                    Sangat aman. Sistem menggunakan router streaming aman yang memvalidasi otorisasi peran (*role-based authorization*). Dokumen identitas KTP hanya dapat dibuka oleh Super Admin, dan gambar screenshot dilindungi dari akses manipulasi pihak luar.
                 </p>
             </div>
 
