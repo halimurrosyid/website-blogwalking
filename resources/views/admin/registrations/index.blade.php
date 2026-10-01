@@ -275,25 +275,14 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <select @change="if ($event.target.value) { allowedTlds = allowedTlds ? allowedTlds + ', ' + $event.target.value : $event.target.value; $event.target.value = ''; }"
                             class="w-full px-2.5 py-2 text-xs rounded-xl border border-slate-300 bg-white">
-                            <option value="">➕ Tambah dari Daftar...</option>
-                            <optgroup label="Domain Indonesia">
-                                <option value=".id">.id (Indonesia Utama)</option>
-                                <option value=".co.id">.co.id (Bisnis & Korporat)</option>
-                                <option value=".web.id">.web.id (Web Personal)</option>
-                                <option value=".my.id">.my.id (Personal / Blog)</option>
-                                <option value=".biz.id">.biz.id (UMKM)</option>
-                                <option value=".ac.id">.ac.id (Kampus)</option>
-                                <option value=".sch.id">.sch.id (Sekolah)</option>
-                                <option value=".go.id">.go.id (Pemerintah)</option>
-                            </optgroup>
-                            <optgroup label="Domain Global Populer">
-                                <option value=".com">.com (Komersial)</option>
-                                <option value=".net">.net (Jaringan)</option>
-                                <option value=".org">.org (Organisasi)</option>
-                                <option value=".info">.info (Informasi)</option>
-                                <option value=".xyz">.xyz (Tech)</option>
-                                <option value=".edu">.edu (Edu Global)</option>
-                            </optgroup>
+                            <option value="">➕ Tambah dari Daftar (230+ TLD Seluruh Dunia)...</option>
+                            @foreach (\App\Services\TldCatalogService::groupedCatalog() as $groupName => $options)
+                                <optgroup label="{{ $groupName }}">
+                                    @foreach ($options as $ext => $label)
+                                        <option value="{{ $ext }}">{{ $label }}</option>
+                                    @endforeach
+                                </optgroup>
+                            @endforeach
                         </select>
                         <input type="text" name="allowed_tlds" x-model="allowedTlds" placeholder="Kosongkan jika bebas semua domain"
                             class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 font-mono">

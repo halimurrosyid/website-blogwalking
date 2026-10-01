@@ -6,46 +6,15 @@
 
 @php
     $initialValue = is_array($value) ? implode(', ', $value) : (string) $value;
-
-    $catalog = [
-        'Domain Indonesia (.id)' => [
-            '.id' => '.id — ccTLD Utama Indonesia',
-            '.co.id' => '.co.id — Perusahaan & Bisnis',
-            '.web.id' => '.web.id — Web Personal & Blog',
-            '.my.id' => '.my.id — Personal / Blog ID',
-            '.biz.id' => '.biz.id — UMKM & Bisnis Mikro',
-            '.or.id' => '.or.id — Organisasi & Yayasan',
-            '.ac.id' => '.ac.id — Perguruan Tinggi / Kampus',
-            '.sch.id' => '.sch.id — Sekolah Indonesia',
-            '.go.id' => '.go.id — Instansi Pemerintah RI',
-            '.desa.id' => '.desa.id — Website Desa Resmi',
-        ],
-        'Domain Global Populer' => [
-            '.com' => '.com — Komersial Internasional',
-            '.net' => '.net — Jaringan & Teknologi',
-            '.org' => '.org — Organisasi Non-Profit',
-            '.info' => '.info — Portal Berita & Informasi',
-            '.biz' => '.biz — Bisnis Internasional',
-            '.xyz' => '.xyz — Generasi Baru & Tech',
-            '.site' => '.site — Website Umum',
-            '.online' => '.online — Layanan Online',
-            '.tech' => '.tech — Startup & Teknologi',
-            '.blog' => '.blog — Khusus Blog',
-            '.app' => '.app — Aplikasi Web & Mobile',
-            '.io' => '.io — Tech & Developer',
-        ],
-        'Domain Khusus Edukasi & Institusi' => [
-            '.ac.id' => '.ac.id — Kampus / Universitas RI',
-            '.sch.id' => '.sch.id — Sekolah RI',
-            '.edu' => '.edu — Kampus / Universitas Global',
-            '.gov' => '.gov — Instansi Luar Negeri',
-        ],
-    ];
+    $groupedCatalog = \App\Services\TldCatalogService::groupedCatalog();
 @endphp
 
 <div x-data="{
     selectedTlds: [],
     customInput: '',
+    searchQuery: '',
+    selectedCategory: 'all',
+    catalog: @js($groupedCatalog),
     init() {
         const raw = @js($initialValue);
         if (raw && typeof raw === 'string') {
@@ -91,18 +60,22 @@
             this.selectedTlds = ['.co.id'];
         } else if (type === 'global') {
             this.selectedTlds = ['.com', '.net', '.org', '.info'];
+        } else if (type === 'tech') {
+            this.selectedTlds = ['.ai', '.io', '.dev', '.app', '.tech'];
+        } else if (type === 'shop') {
+            this.selectedTlds = ['.shop', '.store', '.market'];
         } else if (type === 'edu') {
             this.selectedTlds = ['.ac.id', '.sch.id', '.edu'];
         }
     }
 }" class="space-y-3">
 
-    <!-- Hidden input that submits comma-separated string to controller -->
+    <!-- Hidden input bound to form submission -->
     <input type="hidden" name="{{ $name }}" id="{{ $id }}" :value="tldsString">
 
-    <!-- Quick Preset Buttons -->
+    <!-- Preset Cepat Buttons -->
     <div>
-        <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
+        <div class="flex flex-wrap items-center gap-1.5 mb-1">
             <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">Preset Cepat:</span>
             
             <button type="button" @click="applyPreset('all')"
@@ -114,7 +87,7 @@
             <button type="button" @click="applyPreset('id_all')"
                 :class="selectedTlds.includes('.id') && selectedTlds.includes('.co.id') ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'"
                 class="px-2.5 py-1 rounded-lg border text-xs transition cursor-pointer flex items-center gap-1">
-                <span>🇮🇩 Semua .ID (.id, .co.id, dll)</span>
+                <span>🇮🇩 Semua .ID</span>
             </button>
 
             <button type="button" @click="applyPreset('id_coid')"
@@ -129,10 +102,22 @@
                 <span>🌐 Global (.com, .net, dll)</span>
             </button>
 
+            <button type="button" @click="applyPreset('tech')"
+                :class="selectedTlds.includes('.ai') && selectedTlds.includes('.io') ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'"
+                class="px-2.5 py-1 rounded-lg border text-xs transition cursor-pointer flex items-center gap-1">
+                <span>💻 Tech & AI (.ai, .io, .dev)</span>
+            </button>
+
+            <button type="button" @click="applyPreset('shop')"
+                :class="selectedTlds.includes('.shop') ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'"
+                class="px-2.5 py-1 rounded-lg border text-xs transition cursor-pointer flex items-center gap-1">
+                <span>🛍️ E-Commerce (.shop, .store)</span>
+            </button>
+
             <button type="button" @click="applyPreset('edu')"
                 :class="selectedTlds.includes('.ac.id') && selectedTlds.includes('.edu') ? 'bg-emerald-600 text-white font-bold border-emerald-600 shadow-xs' : 'bg-white text-slate-700 hover:bg-slate-50 border-slate-300'"
                 class="px-2.5 py-1 rounded-lg border text-xs transition cursor-pointer flex items-center gap-1">
-                <span>🎓 Edukasi (.ac.id / .edu)</span>
+                <span>🎓 Edukasi (.ac.id, .edu)</span>
             </button>
         </div>
     </div>
@@ -142,8 +127,8 @@
         <div class="sm:col-span-8">
             <select @change="if ($event.target.value) { addTld($event.target.value); $event.target.value = ''; }"
                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 text-xs sm:text-sm font-medium transition cursor-pointer shadow-2xs">
-                <option value="">➕ Pilih Ekstensi Domain dari Menu Dropdown...</option>
-                @foreach ($catalog as $groupName => $options)
+                <option value="">➕ Pilih Ekstensi Domain Seluruh Dunia dari Dropdown (230+ TLDs)...</option>
+                @foreach ($groupedCatalog as $groupName => $options)
                     <optgroup label="{{ $groupName }}">
                         @foreach ($options as $ext => $label)
                             <option value="{{ $ext }}">{{ $label }}</option>
@@ -169,13 +154,13 @@
         <template x-if="selectedTlds.length === 0">
             <div class="flex items-center gap-2 text-xs text-emerald-700 font-semibold">
                 <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
-                <span>Bebas Semua Ekstensi Domain (Worker ini boleh berkomentar di website domain mana pun tanpa batasan TLD).</span>
+                <span>Bebas Semua Ekstensi Domain (Worker ini boleh berkomentar di website domain mana pun di seluruh dunia tanpa batasan TLD).</span>
             </div>
         </template>
 
         <template x-if="selectedTlds.length > 0">
             <div class="flex flex-wrap items-center gap-2 w-full">
-                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+                <span class="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1">
                     Aktif Terpilih (<span x-text="selectedTlds.length"></span>):
                 </span>
 
