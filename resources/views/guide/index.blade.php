@@ -856,6 +856,38 @@
             </div>
         </div>
 
+        <!-- Section H: Manajemen Akun Super Admin (Multi-Admin) -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+            <div class="flex items-center gap-3">
+                <span class="w-8 h-8 rounded-xl bg-slate-900 text-white font-bold text-sm flex items-center justify-center shrink-0">8</span>
+                <div>
+                    <h2 class="text-base font-bold text-slate-900">Manajemen Akun Super Admin (Multi-Admin)</h2>
+                    <p class="text-xs text-slate-500">Menambah rekan Super Admin baru, kontrol status aktif/nonaktif, dan reset password mandiri.</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <div class="font-bold text-slate-900">Tambah Super Admin Baru</div>
+                    <p class="text-slate-600 leading-relaxed">
+                        Buka menu <strong>Pengaturan &rarr; Kelola Super Admin</strong> dan klik <code>+ Tambah Super Admin</code>. Tersedia tombol pembuat kata sandi acak yang kuat secara otomatis.
+                    </p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <div class="font-bold text-slate-900">Reset Sandi & Nonaktifkan Akun</div>
+                    <p class="text-slate-600 leading-relaxed">
+                        Super Admin dapat mereset sandi rekan admin lain kapan saja atau menonaktifkan akun yang sudah tidak bertugas dengan 1 klik tombol toggle.
+                    </p>
+                </div>
+                <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <div class="font-bold text-slate-900">Proteksi Keamanan Sistem</div>
+                    <p class="text-slate-600 leading-relaxed">
+                        Sistem melindungi Super Admin agar tidak dapat menghapus atau menonaktifkan akun sendiri, serta mencegah penghapusan jika hanya tersisa 1 Super Admin terakhir.
+                    </p>
+                </div>
+            </div>
+        </div>
+
     </div>
     @endif
 
@@ -926,12 +958,21 @@
                 </p>
             </div>
 
-            <div class="py-4 last:pb-0">
+            <div class="py-4">
                 <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
                     <span class="text-emerald-600">Q:</span> Apakah file upload bukti screenshot dan gambar KTP aman di server?
                 </h3>
                 <p class="text-xs text-slate-600 mt-1.5 leading-relaxed pl-6">
                     Sangat aman. Sistem menggunakan router streaming aman yang memvalidasi otorisasi peran (*role-based authorization*). Dokumen identitas KTP hanya dapat dibuka oleh Super Admin, dan gambar screenshot dilindungi dari akses manipulasi pihak luar.
+                </p>
+            </div>
+
+            <div class="py-4 last:pb-0">
+                <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
+                    <span class="text-emerald-600">Q:</span> Bagaimana cara menambah akun rekan Super Admin baru?
+                </h3>
+                <p class="text-xs text-slate-600 mt-1.5 leading-relaxed pl-6">
+                    Buka menu <strong>Pengaturan &rarr; Kelola Super Admin</strong>, lalu klik tombol <strong>+ Tambah Super Admin</strong>. Cukup masukkan nama, email, dan password. Akun tersebut langsung aktif dan memiliki hak akses Super Admin penuh ke seluruh dashboard.
                 </p>
             </div>
 

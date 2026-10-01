@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\PayoutController;
@@ -120,6 +121,16 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('workers', WorkerController::class)->except(['show', 'destroy']);
     Route::post('/workers/{worker}/toggle', [WorkerController::class, 'toggleStatus'])->name('workers.toggle');
     Route::post('/workers/{worker}/reset-password', [WorkerController::class, 'resetPassword'])->name('workers.reset-password');
+
+    // Super Admin Management
+    Route::get('/admins', [AdminUserController::class, 'index'])->name('admins.index');
+    Route::get('/admins/create', [AdminUserController::class, 'create'])->name('admins.create');
+    Route::post('/admins', [AdminUserController::class, 'store'])->name('admins.store');
+    Route::get('/admins/{admin}/edit', [AdminUserController::class, 'edit'])->name('admins.edit');
+    Route::put('/admins/{admin}', [AdminUserController::class, 'update'])->name('admins.update');
+    Route::post('/admins/{admin}/toggle', [AdminUserController::class, 'toggleStatus'])->name('admins.toggle');
+    Route::post('/admins/{admin}/reset-password', [AdminUserController::class, 'resetPassword'])->name('admins.reset-password');
+    Route::delete('/admins/{admin}', [AdminUserController::class, 'destroy'])->name('admins.destroy');
 
     // Domain & Quota Manager
     Route::get('/domains', [DomainController::class, 'index'])->name('domains.index');
