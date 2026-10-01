@@ -36,28 +36,100 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
-     * Standard list of conventional banks in Indonesia.
+     * Standard list of conventional and digital banks in Indonesia.
      *
      * @var array<string, string>
      */
     public static array $conventionalBanks = [
+        // BUMN & Syariah Utama
         'BCA' => 'Bank Central Asia (BCA)',
         'Mandiri' => 'Bank Mandiri',
         'BRI' => 'Bank Rakyat Indonesia (BRI)',
         'BNI' => 'Bank Negara Indonesia (BNI)',
+        'BSI' => 'Bank Syariah Indonesia (BSI)',
+        'BTN' => 'Bank Tabungan Negara (BTN)',
+        // Digital Banks
+        'Seabank' => 'SeaBank Indonesia',
+        'Jago' => 'Bank Jago',
+        'BNC' => 'Bank Neo Commerce (BNC / Neobank)',
+        'Blu' => 'Blu by BCA Digital',
+        'BTPN_Jenius' => 'Bank BTPN / Jenius',
+        'Allo' => 'Allo Bank Indonesia',
+        'Superbank' => 'Superbank',
+        'Raya' => 'Bank Raya Indonesia',
+        'TMRW' => 'TMRW by UOB Indonesia',
+        // Swasta Nasional
         'CIMB' => 'Bank CIMB Niaga',
         'Permata' => 'Bank Permata',
         'Danamon' => 'Bank Danamon',
-        'BTN' => 'Bank Tabungan Negara (BTN)',
         'Panin' => 'Bank Panin',
         'OCBC' => 'Bank OCBC NISP',
-        'BTPN' => 'Bank BTPN / Jenius',
-        'Maybank' => 'Bank Maybank Indonesia',
         'Mega' => 'Bank Mega',
+        'Maybank' => 'Bank Maybank Indonesia',
         'Sinarmas' => 'Bank Sinarmas',
-        'BSI' => 'Bank Syariah Indonesia (BSI)',
         'Muamalat' => 'Bank Muamalat',
+        'Bukopin' => 'KB Bukopin',
+        'MNC' => 'Bank MNC',
+        'Victoria' => 'Bank Victoria',
+        'Maspion' => 'Bank Maspion',
+        'Ina' => 'Bank Ina Perdana',
+        'ArthaGraha' => 'Bank Artha Graha Internasional',
+        'Ganesha' => 'Bank Ganesha',
+        'Nobu' => 'Bank Nationalnobu (Nobu Bank)',
+        'Mayapada' => 'Bank Mayapada',
+        'Mestika' => 'Bank Mestika Dharma',
+        'Shinhan' => 'Bank Shinhan Indonesia',
+        'Woori' => 'Bank Woori Saudara',
+        'IBK' => 'Bank IBK Indonesia',
+        'Commonwealth' => 'Bank Commonwealth',
+        'UOB' => 'Bank UOB Indonesia',
+        'StandardChartered' => 'Standard Chartered Bank',
+        'HSBC' => 'HSBC Indonesia',
+        // BPD (Bank Pembangunan Daerah)
+        'BPD_DKI' => 'Bank DKI',
+        'BPD_BJB' => 'Bank BJB (Jawa Barat & Banten)',
+        'BPD_Jateng' => 'Bank Jateng',
+        'BPD_Jatim' => 'Bank Jatim',
+        'BPD_DIY' => 'Bank BPD DIY (Yogyakarta)',
+        'BPD_Bali' => 'Bank BPD Bali',
+        'BPD_Sumut' => 'Bank Sumut',
+        'BPD_Nagari' => 'Bank Nagari (BPD Sumatera Barat)',
+        'BPD_RiauKepri' => 'Bank Riau Kepri Syariah',
+        'BPD_SumselBabel' => 'Bank Sumsel Babel',
+        'BPD_Lampung' => 'Bank Lampung',
+        'BPD_Jambi' => 'Bank Jambi',
+        'BPD_Bengkulu' => 'Bank Bengkulu',
+        'BPD_Kalsel' => 'Bank Kalsel',
+        'BPD_Kalbar' => 'Bank Kalbar',
+        'BPD_Kaltimtara' => 'Bank Kaltimtara',
+        'BPD_Kalteng' => 'Bank Kalteng',
+        'BPD_Sulselbar' => 'Bank Sulselbar',
+        'BPD_SulutGo' => 'Bank SulutGo',
+        'BPD_Sulteng' => 'Bank Sulteng',
+        'BPD_Sultra' => 'Bank Sultra',
+        'BPD_NTB' => 'Bank NTB Syariah',
+        'BPD_NTT' => 'Bank NTT',
+        'BPD_MalukuMalut' => 'Bank Maluku Malut',
+        'BPD_Papua' => 'Bank Papua',
+        // E-Wallet
+        'DANA' => 'DANA (Dompet Digital)',
+        'GOPAY' => 'GoPay (Gojek)',
+        'OVO' => 'OVO',
+        'SHOPEEPAY' => 'ShopeePay',
+        'LINKAJA' => 'LinkAja',
+        // Lainnya
+        'LAINNYA' => 'Bank Lain / Koperasi / BPR Lainnya',
     ];
+
+    /**
+     * Get all supported banks in Indonesia.
+     *
+     * @return array<string, string>
+     */
+    public static function getBanks(): array
+    {
+        return self::$conventionalBanks;
+    }
 
     /**
      * Get the attributes that should be cast.
@@ -170,5 +242,15 @@ class User extends Authenticatable
     public function payouts()
     {
         return $this->hasMany(Payout::class);
+    }
+
+    public function profileChangeRequests()
+    {
+        return $this->hasMany(ProfileChangeRequest::class);
+    }
+
+    public function pendingProfileChangeRequest()
+    {
+        return $this->hasOne(ProfileChangeRequest::class)->where('status', 'pending')->latestOfMany();
     }
 }

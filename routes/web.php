@@ -4,13 +4,17 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\PayoutController;
 use App\Http\Controllers\Admin\PeriodController;
+use App\Http\Controllers\Admin\ProfileChangeRequestController;
 use App\Http\Controllers\Admin\RegistrationApprovalController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\ReviewController;
 use App\Http\Controllers\Admin\SystemMaintenanceController;
 use App\Http\Controllers\Admin\WorkerController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
+use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\InstallController;
+use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
 use App\Http\Controllers\Worker\DashboardController as WorkerDashboardController;
 use App\Http\Controllers\Worker\SubmissionController;
@@ -43,8 +47,22 @@ Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1')->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Password Reset Routes
+Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])->middleware('guest')->name('password.request');
+Route::post('/forgot-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware(['guest', 'throttle:6,1'])->name('password.email');
+Route::get('/reset-password/{token}', [ResetPasswordController::class, 'showResetForm'])->middleware('guest')->name('password.reset');
+Route::post('/reset-password', [ResetPasswordController::class, 'reset'])->middleware('guest')->name('password.update');
+
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register'])->middleware('throttle:10,1')->name('register.post');
+
+// User Profile & Rekening Routes (Blogwalker & Admin)
+Route::middleware('auth')->prefix('profile')->name('profile.')->group(function () {
+    Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+    Route::put('/', [ProfileController::class, 'updateProfile'])->name('update');
+    Route::delete('/request/{profileRequest}', [ProfileController::class, 'cancelRequest'])->name('cancel-request');
+    Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password');
+});
 
 // Blogwalker Routes
 Route::middleware(['auth', 'blogwalker'])->prefix('blogwalker')->name('blogwalker.')->group(function () {
@@ -86,9 +104,15 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/registrations/{applicant}/approve', [RegistrationApprovalController::class, 'approve'])->name('registrations.approve');
     Route::post('/registrations/{applicant}/reject', [RegistrationApprovalController::class, 'reject'])->name('registrations.reject');
 
+    // Verifikasi Perubahan Rekening & Profil Blogwalker
+    Route::get('/profile-requests', [ProfileChangeRequestController::class, 'index'])->name('profile-requests.index');
+    Route::post('/profile-requests/{profileRequest}/approve', [ProfileChangeRequestController::class, 'approve'])->name('profile-requests.approve');
+    Route::post('/profile-requests/{profileRequest}/reject', [ProfileChangeRequestController::class, 'reject'])->name('profile-requests.reject');
+
     // Worker Management & Plotting
     Route::resource('workers', WorkerController::class)->except(['show', 'destroy']);
     Route::post('/workers/{worker}/toggle', [WorkerController::class, 'toggleStatus'])->name('workers.toggle');
+    Route::post('/workers/{worker}/reset-password', [WorkerController::class, 'resetPassword'])->name('workers.reset-password');
 
     // Domain & Quota Manager
     Route::get('/domains', [DomainController::class, 'index'])->name('domains.index');

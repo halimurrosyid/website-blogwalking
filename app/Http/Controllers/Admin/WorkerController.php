@@ -164,4 +164,29 @@ class WorkerController extends Controller
 
         return back()->with('success', "Status worker [{$worker->name}] berhasil {$statusStr}.");
     }
+
+    /**
+     * Super Admin manual password reset for a worker/user.
+     */
+    public function resetPassword(Request $request, User $worker): RedirectResponse
+    {
+        if ($worker->isAdmin()) {
+            return back()->with('error', 'Password Administrator tidak dapat direset dari menu ini.');
+        }
+
+        $validated = $request->validate([
+            'password' => ['required', 'string', 'min:8'],
+        ], [
+            'password.required' => 'Password baru wajib diisi.',
+            'password.min' => 'Password baru minimal harus 8 karakter.',
+        ]);
+
+        $worker->update([
+            'password' => Hash::make($validated['password']),
+        ]);
+
+        return back()
+            ->with('success', "Password untuk [{$worker->name}] berhasil direset menjadi: [{$validated['password']}]. Silakan bagikan password ini kepada pengguna.")
+            ->with('temp_password', $validated['password']);
+    }
 }

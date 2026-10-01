@@ -87,6 +87,7 @@
                         @php
                             $pendingCount = \App\Models\Submission::where('review_status', 'pending')->count();
                             $pendingRegCount = \App\Models\User::where('role', 'blogwalker')->where('approval_status', 'pending')->count();
+                            $pendingProfileChangeCount = \App\Models\ProfileChangeRequest::where('status', 'pending')->count();
                             $availableTargetsCount = \App\Models\TargetUrl::available()->count();
                         @endphp
 
@@ -168,6 +169,18 @@
                                 @endif
                             </a>
 
+                            <a href="{{ route('admin.profile-requests.index') }}" class="flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.profile-requests.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                <div class="flex items-center gap-3">
+                                    <svg class="w-4 h-4 {{ request()->routeIs('admin.profile-requests.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                                    </svg>
+                                    <span>Persetujuan Rekening</span>
+                                </div>
+                                @if($pendingProfileChangeCount > 0)
+                                    <span class="px-2 py-0.5 text-[11px] font-bold bg-amber-500 text-white rounded-full">{{ $pendingProfileChangeCount }}</span>
+                                @endif
+                            </a>
+
                             <a href="{{ route('admin.reports.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.reports.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                                 <svg class="w-4 h-4 {{ request()->routeIs('admin.reports.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
@@ -186,6 +199,13 @@
                         <!-- GRUP: SISTEM -->
                         <div class="space-y-1">
                             <div class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pengaturan</div>
+
+                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('profile.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                <svg class="w-4 h-4 {{ request()->routeIs('profile.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                <span>Profil Admin</span>
+                            </a>
 
                             <a href="{{ route('admin.system.index') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('admin.system.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
                                 <svg class="w-4 h-4 {{ request()->routeIs('admin.system.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -237,6 +257,13 @@
                                 </svg>
                                 <span>Riwayat Pengerjaan</span>
                             </a>
+
+                            <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition {{ request()->routeIs('profile.*') ? 'bg-emerald-50 text-emerald-700 font-bold border-l-4 border-emerald-600' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                                <svg class="w-4 h-4 {{ request()->routeIs('profile.*') ? 'text-emerald-600' : 'text-slate-400' }}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                <span>Profil & Rekening Saya</span>
+                            </a>
                         </div>
                     @endif
 
@@ -248,17 +275,17 @@
             <!-- Sidebar User Profile Footer -->
             <div class="p-3.5 border-t border-slate-100 bg-slate-50/70 shrink-0">
                 <div class="flex items-center justify-between gap-3">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                        <div class="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0">
+                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 min-w-0 hover:opacity-85 transition group" title="Buka Profil & Pengaturan Akun">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 border border-slate-300 text-slate-700 flex items-center justify-center font-bold text-xs shrink-0 group-hover:border-emerald-500">
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>
                         <div class="min-w-0">
-                            <div class="text-xs font-bold text-slate-800 truncate leading-tight">{{ auth()->user()->name }}</div>
+                            <div class="text-xs font-bold text-slate-800 truncate leading-tight group-hover:text-emerald-700">{{ auth()->user()->name }}</div>
                             <div class="text-[10px] font-semibold uppercase tracking-wider {{ auth()->user()->isAdmin() ? 'text-purple-600' : 'text-emerald-600' }}">
-                                {{ auth()->user()->isAdmin() ? 'Super Admin' : 'Blogwalker' }}
+                                {{ auth()->user()->isAdmin() ? 'Super Admin' : 'Blogwalker' }} &bull; <span class="underline">Profil</span>
                             </div>
                         </div>
-                    </div>
+                    </a>
 
                     <!-- Quick Logout Button -->
                     <form method="POST" action="{{ route('logout') }}" class="shrink-0">
@@ -301,6 +328,11 @@
                         <svg class="w-3.5 h-3.5 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                         <span>{{ date('d F Y') }}</span>
                     </div>
+
+                    <a href="{{ route('profile.edit') }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-700 font-semibold text-xs transition" title="Profil & Pengaturan Akun">
+                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                        <span class="hidden sm:inline">Profil</span>
+                    </a>
 
                     @if(auth()->user()->isAdmin())
                         <a href="{{ route('admin.reviews.index') }}" class="relative inline-flex items-center justify-center p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition">
