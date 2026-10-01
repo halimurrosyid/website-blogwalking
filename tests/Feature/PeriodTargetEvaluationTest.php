@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Assignment;
 use App\Models\Domain;
 use App\Models\Period;
+use App\Models\TargetUrl;
 use App\Models\User;
 use App\Services\PeriodService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -85,6 +86,26 @@ class PeriodTargetEvaluationTest extends TestCase
 
     public function test_admin_can_update_period_and_domain_limits(): void
     {
+        $domain = Domain::create([
+            'root_domain' => 'contoh-site.com',
+            'tld' => '.com',
+            'url_count' => 5,
+            'max_limit' => 5,
+            'is_locked' => true,
+        ]);
+
+        TargetUrl::create([
+            'url' => 'https://contoh-site.com/artikel-1',
+            'root_domain' => 'contoh-site.com',
+            'domain_id' => $domain->id,
+            'status' => 'domain_full',
+        ]);
+
+        // Test GET fallback redirects to index
+        $getResponse = $this->actingAs($this->admin)->get(route('admin.periods.config', $this->period->id));
+        $getResponse->assertRedirect(route('admin.periods.index'));
+
+        // POST config update with max_urls_per_domain = 8 (which unlocks the domain and updates TargetUrl)
         $response = $this->actingAs($this->admin)->post(route('admin.periods.config', $this->period->id), [
             'min_target' => 150,
             'max_urls_per_domain' => 8,
@@ -99,6 +120,15 @@ class PeriodTargetEvaluationTest extends TestCase
         $this->assertEquals(150, $this->period->min_target);
         $this->assertEquals(8, $this->period->max_urls_per_domain);
         $this->assertEquals(500, $this->period->max_target);
+
+        $domain->refresh();
+        $this->assertFalse($domain->is_locked);
+        $this->assertEquals(8, $domain->max_limit);
+
+        $this->assertDatabaseHas('target_urls', [
+            'url' => 'https://contoh-site.com/artikel-1',
+            'status' => 'available',
+        ]);
     }
 
     public function test_blogwalker_cannot_submit_domain_outside_assigned_tlds(): void

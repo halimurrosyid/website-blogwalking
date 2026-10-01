@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\WorkerController;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\ResetPasswordController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\GuideController;
 use App\Http\Controllers\InstallController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RegisterController;
@@ -63,6 +64,9 @@ Route::middleware('auth')->prefix('profile')->name('profile.')->group(function (
     Route::delete('/request/{profileRequest}', [ProfileController::class, 'cancelRequest'])->name('cancel-request');
     Route::put('/password', [ProfileController::class, 'updatePassword'])->name('password');
 });
+
+// Buku Panduan Penggunaan Aplikasi (Super Admin & Blogwalker)
+Route::get('/guide', [GuideController::class, 'index'])->middleware('auth')->name('guide');
 
 // Blogwalker Routes
 Route::middleware(['auth', 'blogwalker'])->prefix('blogwalker')->name('blogwalker.')->group(function () {
@@ -140,6 +144,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
 
     // Periode Bulanan, Evaluasi & Target Global
     Route::get('/periods', [PeriodController::class, 'index'])->name('periods.index');
+    Route::get('/periods/{period}/config', fn () => redirect()->route('admin.periods.index'));
     Route::post('/periods/{period}/config', [PeriodController::class, 'updateConfig'])->name('periods.config');
     Route::post('/periods/assignment/{assignment}', [PeriodController::class, 'updateAssignment'])->name('periods.assignment');
     Route::post('/periods/{period}/rollover', [PeriodController::class, 'closeAndRollOver'])->name('periods.rollover');

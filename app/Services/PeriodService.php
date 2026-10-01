@@ -6,6 +6,7 @@ use App\Models\AppSetting;
 use App\Models\Assignment;
 use App\Models\Domain;
 use App\Models\Period;
+use App\Models\TargetUrl;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
