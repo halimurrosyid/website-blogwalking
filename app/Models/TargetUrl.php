@@ -103,7 +103,90 @@ class TargetUrl extends Model
         $this->update([
             'status' => 'completed',
             'submission_id' => $submission->id,
+            'taken_by_user_id' => $this->taken_by_user_id ?? $submission->user_id,
+            'taken_at' => $this->taken_at ?? now(),
         ]);
+    }
+
+    /**
+     * Find a matching TargetUrl for a given URL (handles slashes, protocols, www).
+     */
+    public static function findMatchingTarget(string $url, ?int $userId = null): ?self
+    {
+        $variants = self::getUrlVariants($url);
+
+        if (empty($variants)) {
+            return null;
+        }
+
+        // Priority 1: In-progress claim by this specific user
+        if ($userId) {
+            $userClaimed = self::whereIn('url', $variants)
+                ->where('taken_by_user_id', $userId)
+                ->where('status', 'in_progress')
+                ->first();
+
+            if ($userClaimed) {
+                return $userClaimed;
+            }
+        }
+
+        // Priority 2: Currently available in pool
+        $available = self::whereIn('url', $variants)
+            ->where('status', 'available')
+            ->first();
+
+        if ($available) {
+            return $available;
+        }
+
+        // Priority 3: In-progress by anyone else or skipped
+        return self::whereIn('url', $variants)
+            ->whereIn('status', ['in_progress', 'skipped'])
+            ->first();
+    }
+
+    /**
+     * Generate URL variants for flexible matching (trailing slash, http/https, www).
+     *
+     * @return array<string>
+     */
+    public static function getUrlVariants(string $url): array
+    {
+        $trimmed = trim($url);
+        if (empty($trimmed)) {
+            return [];
+        }
+
+        $withoutScheme = preg_replace('#^https?://#i', '', $trimmed);
+        $withoutTrailing = rtrim($withoutScheme, '/');
+
+        $variants = [
+            $trimmed,
+            rtrim($trimmed, '/'),
+            rtrim($trimmed, '/').'/',
+            'https://'.$withoutTrailing,
+            'https://'.$withoutTrailing.'/',
+            'http://'.$withoutTrailing,
+            'http://'.$withoutTrailing.'/',
+        ];
+
+        // Also handle www prefix
+        if (str_starts_with(strtolower($withoutTrailing), 'www.')) {
+            $noWww = substr($withoutTrailing, 4);
+            $variants[] = 'https://'.$noWww;
+            $variants[] = 'https://'.$noWww.'/';
+            $variants[] = 'http://'.$noWww;
+            $variants[] = 'http://'.$noWww.'/';
+        } else {
+            $withWww = 'www.'.$withoutTrailing;
+            $variants[] = 'https://'.$withWww;
+            $variants[] = 'https://'.$withWww.'/';
+            $variants[] = 'http://'.$withWww;
+            $variants[] = 'http://'.$withWww.'/';
+        }
+
+        return array_values(array_unique(array_filter($variants)));
     }
 
     /**

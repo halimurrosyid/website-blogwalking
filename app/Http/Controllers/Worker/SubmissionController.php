@@ -154,10 +154,19 @@ class SubmissionController extends Controller
             $target = null;
             $rewardAmount = null;
             $taskType = $request->input('task_type', TaskTypeService::COMMENT);
+            $isAutoMatched = false;
 
             if ($request->filled('target_id')) {
                 $target = TargetUrl::find($request->input('target_id'));
                 if ($target) {
+                    $taskType = $target->task_type ?? $taskType;
+                    $rewardAmount = $target->getEffectiveRate();
+                }
+            } else {
+                // Auto-match if worker submitted a URL that exists in target missions queue
+                $target = TargetUrl::findMatchingTarget($request->input('target_url'), $user->id);
+                if ($target) {
+                    $isAutoMatched = true;
                     $taskType = $target->task_type ?? $taskType;
                     $rewardAmount = $target->getEffectiveRate();
                 }
@@ -171,6 +180,9 @@ class SubmissionController extends Controller
                 }
             }
 
+            $clientUrl = $request->filled('client_url') ? $request->input('client_url') : $target?->client_url;
+            $keyword = $request->filled('keyword') ? $request->input('keyword') : $target?->keyword;
+
             $domainRating = $taskType === TaskTypeService::COMMENT_HIGH_DR
                 ? ($request->filled('domain_rating') ? (int) $request->input('domain_rating') : null)
                 : null;
@@ -182,8 +194,8 @@ class SubmissionController extends Controller
                 $screenshotPath,
                 $request->input('comment_type', 'approved_live'),
                 $taskType,
-                $request->input('client_url', $target?->client_url),
-                $request->input('keyword', $target?->keyword),
+                $clientUrl,
+                $keyword,
                 $request->input('published_url'),
                 $request->input('platform'),
                 $rewardAmount,
@@ -192,15 +204,17 @@ class SubmissionController extends Controller
                 $request->input('social_account')
             );
 
-            // If this came from a target task, link and complete it
+            // If this came from a target task (either claimed or auto-matched), link and complete it
             if ($target) {
                 $target->markCompleted($submission);
                 $submission->update(['target_url_id' => $target->id]);
             }
 
+            $matchedNotice = $isAutoMatched ? ' (Otomatis terhubung dengan antrean misi target admin)' : '';
+
             return redirect()
                 ->route('blogwalker.submissions.index')
-                ->with('success', 'Laporan tugas ['.TaskTypeService::getName($taskType)."] di domain [{$submission->domain->root_domain}] berhasil dikirim! Menunggu verifikasi admin.");
+                ->with('success', 'Laporan tugas ['.TaskTypeService::getName($taskType)."] di domain [{$submission->domain->root_domain}] berhasil dikirim!{$matchedNotice} Menunggu verifikasi admin.");
         } catch (ValidationException $e) {
             throw $e;
         } catch (\Exception $e) {

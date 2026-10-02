@@ -448,8 +448,9 @@ class DomainService
 
             // Check if exact target_url has already been submitted (unless social media)
             if (! $isExemptDomain) {
+                $urlVariants = TargetUrl::getUrlVariants($targetUrl);
                 $duplicate = Submission::where('domain_id', $domain->id)
-                    ->where('target_url', $targetUrl)
+                    ->whereIn('target_url', $urlVariants)
                     ->exists();
 
                 if ($duplicate) {
@@ -491,10 +492,17 @@ class DomainService
 
             // If linked to a target_url, update its status
             if ($targetUrlId) {
-                TargetUrl::where('id', $targetUrlId)->update([
-                    'status' => 'completed',
-                    'submission_id' => $submission->id,
-                ]);
+                $targetModel = TargetUrl::find($targetUrlId);
+                if ($targetModel) {
+                    $targetModel->markCompleted($submission);
+                }
+            } else {
+                // Secondary safeguard: auto-link target if matching URL found in target pool
+                $matchedTarget = TargetUrl::findMatchingTarget($targetUrl, $user->id);
+                if ($matchedTarget) {
+                    $matchedTarget->markCompleted($submission);
+                    $submission->update(['target_url_id' => $matchedTarget->id]);
+                }
             }
 
             return $submission;
