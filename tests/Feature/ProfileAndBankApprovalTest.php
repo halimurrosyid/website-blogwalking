@@ -278,4 +278,33 @@ class ProfileAndBankApprovalTest extends TestCase
         $this->worker->refresh();
         $this->assertTrue(Hash::check('brandNewSecurePass2026', $this->worker->password));
     }
+
+    public function test_super_admin_create_worker_form_does_not_contain_rate_field(): void
+    {
+        $response = $this->actingAs($this->admin)->get(route('admin.workers.create'));
+
+        $response->assertStatus(200);
+        $response->assertSee('Tambah Anggota Blogwalker Baru');
+        $response->assertDontSee('Tarif per Komentar Disetujui (Rupiah)');
+        $response->assertDontSee('name="default_rate"', false);
+    }
+
+    public function test_super_admin_can_create_worker_manually_without_specifying_rate(): void
+    {
+        $response = $this->actingAs($this->admin)->post(route('admin.workers.store'), [
+            'name' => 'Manual Worker Test',
+            'email' => 'manualworker@example.com',
+            'password' => 'secret1234',
+            'phone' => '081234567890',
+        ]);
+
+        $response->assertRedirect(route('admin.workers.index'));
+        $this->assertDatabaseHas('users', [
+            'name' => 'Manual Worker Test',
+            'email' => 'manualworker@example.com',
+            'role' => 'blogwalker',
+            'default_rate' => 700.00,
+            'is_active' => true,
+        ]);
+    }
 }

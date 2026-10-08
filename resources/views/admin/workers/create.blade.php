@@ -51,17 +51,6 @@
                 </div>
             </div>
 
-            <div>
-                <label for="default_rate" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
-                    Tarif per Komentar Disetujui (Rupiah) <span class="text-rose-500">*</span>
-                </label>
-                <div class="relative">
-                    <span class="absolute left-4 top-2.5 text-sm font-bold text-slate-400">Rp</span>
-                    <input type="number" step="50" name="default_rate" id="default_rate" value="{{ old('default_rate', 700) }}" required
-                        class="w-full pl-12 pr-4 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 text-sm font-bold text-slate-900">
-                </div>
-                <span class="text-[11px] text-slate-400 mt-1 block">Default: Rp 700 atau sesuaikan dengan tingkat kesulitan TLD.</span>
-            </div>
 
             <h2 class="text-sm font-bold uppercase tracking-wider text-slate-400 pt-4 pb-2 border-b border-slate-100">2. Plotting Tugas Khusus</h2>
 

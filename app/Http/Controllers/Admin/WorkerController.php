@@ -40,7 +40,7 @@ class WorkerController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'password' => ['required', 'string', 'min:6'],
-            'default_rate' => ['required', 'numeric', 'min:0'],
+            'default_rate' => ['nullable', 'numeric', 'min:0'],
             'phone' => ['nullable', 'string', 'max:20'],
             'allowed_tlds' => ['nullable', 'string'], // Comma-separated: .co.id, .web.id (Kosong = semua domain)
             'target_keywords' => ['nullable', 'string'],
@@ -48,13 +48,15 @@ class WorkerController extends Controller
             'custom_instructions' => ['nullable', 'string'],
         ]);
 
+        $defaultRate = ! empty($validated['default_rate']) ? (float) $validated['default_rate'] : 700.00;
+
         $worker = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
             'role' => 'blogwalker',
-            'default_rate' => $validated['default_rate'],
-            'phone' => $validated['phone'],
+            'default_rate' => $defaultRate,
+            'phone' => $validated['phone'] ?? null,
             'is_active' => true,
         ]);
 
@@ -67,9 +69,9 @@ class WorkerController extends Controller
         Assignment::create([
             'user_id' => $worker->id,
             'allowed_tlds' => $tldArray,
-            'target_keywords' => $validated['target_keywords'],
-            'target_backlink_url' => $validated['target_backlink_url'],
-            'custom_instructions' => $validated['custom_instructions'],
+            'target_keywords' => $validated['target_keywords'] ?? null,
+            'target_backlink_url' => $validated['target_backlink_url'] ?? null,
+            'custom_instructions' => $validated['custom_instructions'] ?? null,
             'is_active' => true,
         ]);
 
@@ -100,7 +102,7 @@ class WorkerController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($worker->id)],
             'password' => ['nullable', 'string', 'min:8'],
-            'default_rate' => ['required', 'numeric', 'min:0'],
+            'default_rate' => ['nullable', 'numeric', 'min:0'],
             'phone' => ['nullable', 'string', 'max:20'],
             'is_active' => ['required', 'boolean'],
             'allowed_tlds' => ['nullable', 'string'],
@@ -112,8 +114,8 @@ class WorkerController extends Controller
         $updateData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
-            'default_rate' => $validated['default_rate'],
-            'phone' => $validated['phone'],
+            'default_rate' => ! empty($validated['default_rate']) ? (float) $validated['default_rate'] : ($worker->default_rate ?? 700.00),
+            'phone' => $validated['phone'] ?? null,
             'is_active' => $validated['is_active'],
         ];
 
@@ -133,17 +135,17 @@ class WorkerController extends Controller
         if ($assignment) {
             $assignment->update([
                 'allowed_tlds' => $tldArray,
-                'target_keywords' => $validated['target_keywords'],
-                'target_backlink_url' => $validated['target_backlink_url'],
-                'custom_instructions' => $validated['custom_instructions'],
+                'target_keywords' => $validated['target_keywords'] ?? null,
+                'target_backlink_url' => $validated['target_backlink_url'] ?? null,
+                'custom_instructions' => $validated['custom_instructions'] ?? null,
             ]);
         } else {
             Assignment::create([
                 'user_id' => $worker->id,
                 'allowed_tlds' => $tldArray,
-                'target_keywords' => $validated['target_keywords'],
-                'target_backlink_url' => $validated['target_backlink_url'],
-                'custom_instructions' => $validated['custom_instructions'],
+                'target_keywords' => $validated['target_keywords'] ?? null,
+                'target_backlink_url' => $validated['target_backlink_url'] ?? null,
+                'custom_instructions' => $validated['custom_instructions'] ?? null,
                 'is_active' => true,
             ]);
         }
