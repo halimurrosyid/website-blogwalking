@@ -757,7 +757,7 @@
                 <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                     <div class="font-bold text-slate-900">Verifikasi Pendaftar Baru</div>
                     <p class="text-slate-600 leading-relaxed">
-                        Tinjau foto KTP dan data bank pendaftar baru di menu <em>Verifikasi Pendaftar Baru</em>. Klik setujui untuk memberikan akses kerja ke dalam sistem.
+                        Tinjau data pendaftar dan foto rekening bank di menu <em>Verifikasi Pendaftar Baru</em>. Klik setujui untuk memberikan akses kerja ke dalam sistem.
                     </p>
                 </div>
                 <div class="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
@@ -960,10 +960,10 @@
 
             <div class="py-4">
                 <h3 class="font-bold text-sm text-slate-900 flex items-center gap-2">
-                    <span class="text-emerald-600">Q:</span> Apakah file upload bukti screenshot dan gambar KTP aman di server?
+                    <span class="text-emerald-600">Q:</span> Apakah file upload bukti screenshot dan dokumen rekening aman di server?
                 </h3>
                 <p class="text-xs text-slate-600 mt-1.5 leading-relaxed pl-6">
-                    Sangat aman. Sistem menggunakan router streaming aman yang memvalidasi otorisasi peran (*role-based authorization*). Dokumen identitas KTP hanya dapat dibuka oleh Super Admin, dan gambar screenshot dilindungi dari akses manipulasi pihak luar.
+                    Sangat aman. Sistem menggunakan router streaming aman yang memvalidasi otorisasi peran (*role-based authorization*). Dokumen rekening hanya dapat dibuka oleh Super Admin, dan gambar screenshot dilindungi dari akses manipulasi pihak luar.
                 </p>
             </div>
 

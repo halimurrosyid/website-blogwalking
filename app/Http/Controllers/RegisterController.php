@@ -36,19 +36,20 @@ class RegisterController extends Controller
             'bank_name' => ['required', 'string', Rule::in(array_keys(User::$conventionalBanks))],
             'bank_account_number' => ['required', 'string', 'max:50'],
             'bank_account_name' => ['required', 'string', 'max:255'],
-            'id_card_photo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB
+            'id_card_photo' => ['nullable', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'],
             'bank_book_photo' => ['required', 'image', 'mimes:jpeg,png,jpg,webp', 'max:5120'], // Max 5MB
         ], [
             'username.alpha_dash' => 'Username hanya boleh berisi huruf, angka, tanda hubung (-), dan garis bawah (_).',
             'username.unique' => 'Username ini sudah digunakan, silakan pilih username lain.',
             'email.unique' => 'Email ini sudah terdaftar di sistem.',
             'password.confirmed' => 'Konfirmasi password tidak sesuai.',
-            'id_card_photo.required' => 'Foto KTP wajib diunggah untuk verifikasi identitas.',
             'bank_book_photo.required' => 'Foto buku rekening wajib diunggah untuk verifikasi pembayaran.',
         ]);
 
         // Securely store documents (processed into WebP)
-        $idCardPath = $imageUploadService->storeScreenshot($request->file('id_card_photo'));
+        $idCardPath = $request->hasFile('id_card_photo')
+            ? $imageUploadService->storeScreenshot($request->file('id_card_photo'))
+            : null;
         $bankBookPath = $imageUploadService->storeScreenshot($request->file('bank_book_photo'));
 
         $defaultRate = 700.00;

@@ -10,7 +10,7 @@
         <div>
             <h1 class="text-2xl font-bold text-slate-900">Halo, {{ $user->name }}! 👋</h1>
             <p class="text-sm text-slate-500 mt-1">
-                Tarif komentar Anda: <span class="font-bold text-emerald-600">Rp {{ number_format($user->default_rate, 0, ',', '.') }}</span> per komentar disetujui.
+                Selamat datang di sistem pelaporan dan monitoring link building Blogwalker.
             </p>
         </div>
         <div class="flex flex-wrap items-center gap-2">

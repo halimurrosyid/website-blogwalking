@@ -4,15 +4,13 @@
 
 @section('content')
 <div class="max-w-2xl mx-auto py-6" x-data="{
-    ktpPreview: null,
     bankBookPreview: null,
-    handleFileChange(event, type) {
+    handleFileChange(event) {
         const file = event.target.files[0];
         if (!file) return;
         const reader = new FileReader();
         reader.onload = (e) => {
-            if (type === 'ktp') this.ktpPreview = e.target.result;
-            if (type === 'bank_book') this.bankBookPreview = e.target.result;
+            this.bankBookPreview = e.target.result;
         };
         reader.readAsDataURL(file);
     }
@@ -42,7 +40,7 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <!-- Nama Lengkap -->
                     <div class="sm:col-span-2">
-                        <label for="name" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">Nama Lengkap (Sesuai KTP) *</label>
+                        <label for="name" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">Nama Lengkap *</label>
                         <input type="text" name="name" id="name" value="{{ old('name') }}" required
                             class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
                             placeholder="Contoh: Muhammad Rizki Pratama">
@@ -148,57 +146,35 @@
                         <label for="bank_account_name" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">Atas Nama Rekening *</label>
                         <input type="text" name="bank_account_name" id="bank_account_name" value="{{ old('bank_account_name') }}" required
                             class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-sm focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                            placeholder="Harus sama dengan KTP">
+                            placeholder="Nama pemilik rekening">
                     </div>
                 </div>
             </div>
 
-            <!-- Section 3: Upload Dokumen Verifikasi -->
+            <!-- Section 3: Upload Dokumen Rekening -->
             <div class="pb-2">
                 <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2 mb-4">
                     <span class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 text-xs font-bold flex items-center justify-center">3</span>
-                    Upload Foto Dokumen Verifikasi
+                    Upload Bukti Rekening Bank
                 </h2>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <!-- Foto KTP -->
-                    <div class="space-y-2">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700">Foto KTP Asli *</label>
-                        <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-4 text-center transition bg-slate-50">
-                            <template x-if="ktpPreview">
-                                <div class="relative mb-2">
-                                    <img :src="ktpPreview" alt="KTP Preview" class="max-h-40 mx-auto rounded-lg shadow-xs border border-slate-200 object-cover">
-                                </div>
-                            </template>
-                            <template x-if="!ktpPreview">
-                                <div class="py-4 text-slate-400">
-                                    <svg class="w-8 h-8 mx-auto text-slate-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"></path></svg>
-                                    <span class="text-xs">Format: JPG, PNG, WebP (Maks. 5MB)</span>
-                                </div>
-                            </template>
-                            <input type="file" name="id_card_photo" required accept="image/*" @change="handleFileChange($event, 'ktp')"
-                                class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
-                        </div>
-                    </div>
-
-                    <!-- Foto Buku Rekening -->
-                    <div class="space-y-2">
-                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700">Foto Buku Rekening / M-Banking *</label>
-                        <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-4 text-center transition bg-slate-50">
-                            <template x-if="bankBookPreview">
-                                <div class="relative mb-2">
-                                    <img :src="bankBookPreview" alt="Buku Rekening Preview" class="max-h-40 mx-auto rounded-lg shadow-xs border border-slate-200 object-cover">
-                                </div>
-                            </template>
-                            <template x-if="!bankBookPreview">
-                                <div class="py-4 text-slate-400">
-                                    <svg class="w-8 h-8 mx-auto text-slate-300 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-                                    <span class="text-xs">Bagian nomor rekening terlihat jelas</span>
-                                </div>
-                            </template>
-                            <input type="file" name="bank_book_photo" required accept="image/*" @change="handleFileChange($event, 'bank_book')"
-                                class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
-                        </div>
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700">Foto Buku Rekening / M-Banking *</label>
+                    <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-5 text-center transition bg-slate-50">
+                        <template x-if="bankBookPreview">
+                            <div class="relative mb-3">
+                                <img :src="bankBookPreview" alt="Buku Rekening Preview" class="max-h-48 mx-auto rounded-lg shadow-xs border border-slate-200 object-cover">
+                            </div>
+                        </template>
+                        <template x-if="!bankBookPreview">
+                            <div class="py-5 text-slate-400">
+                                <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                                <span class="text-xs block font-medium">Unggah foto buku tabungan atau screenshot m-banking</span>
+                                <span class="text-[11px] text-slate-400 mt-0.5 block">Format: JPG, PNG, WebP (Maks. 5MB) &bull; Pastikan nomor rekening dan nama pemilik terlihat jelas</span>
+                            </div>
+                        </template>
+                        <input type="file" name="bank_book_photo" required accept="image/*" @change="handleFileChange($event)"
+                            class="block w-full max-w-sm mx-auto text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100 cursor-pointer">
                     </div>
                 </div>
             </div>

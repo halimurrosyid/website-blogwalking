@@ -41,7 +41,7 @@ class RegistrationApprovalController extends Controller
     public function approve(Request $request, User $applicant, PeriodService $periodService): RedirectResponse
     {
         $validated = $request->validate([
-            'default_rate' => ['required', 'numeric', 'min:0'],
+            'default_rate' => ['nullable', 'numeric', 'min:0'],
             'allowed_tlds' => ['nullable', 'string'],
             'target_keywords' => ['nullable', 'string'],
             'target_backlink_url' => ['nullable', 'string'],
@@ -56,11 +56,13 @@ class RegistrationApprovalController extends Controller
             $tldArray = array_values(array_filter(array_map('trim', explode(',', $validated['allowed_tlds']))));
         }
 
+        $rate = ! empty($validated['default_rate']) ? (float) $validated['default_rate'] : ($applicant->default_rate ?? 700.00);
+
         // Activate and approve applicant
         $applicant->update([
             'approval_status' => 'approved',
             'is_active' => true,
-            'default_rate' => $validated['default_rate'],
+            'default_rate' => $rate,
             'approved_at' => now(),
             'approved_by' => Auth::id(),
             'rejection_reason' => null,
@@ -77,7 +79,7 @@ class RegistrationApprovalController extends Controller
             [
                 'allowed_tlds' => $tldArray,
                 'target_keywords' => $validated['target_keywords'] ?? null,
-                'target_backlink_url' => $validated['target_backlink_url'],
+                'target_backlink_url' => $validated['target_backlink_url'] ?? null,
                 'min_target' => $minTarget,
                 'status' => 'active',
                 'is_eligible_next_period' => true,

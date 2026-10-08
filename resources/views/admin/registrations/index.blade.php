@@ -15,14 +15,12 @@
     approveModalOpen: false,
     approveUrl: '',
     approveName: '',
-    defaultRate: 700,
     allowedTlds: '',
     targetKeywords: '',
     targetBacklinkUrl: '',
-    openApproveModal(url, name, rate) {
+    openApproveModal(url, name) {
         this.approveUrl = url;
         this.approveName = name;
-        this.defaultRate = rate;
         this.allowedTlds = '';
         this.targetKeywords = '';
         this.targetBacklinkUrl = '';
@@ -43,7 +41,7 @@
         <div>
             <h1 class="text-2xl font-bold text-slate-900">Verifikasi Pendaftar Baru</h1>
             <p class="text-sm text-slate-500 mt-1">
-                Tinjau foto KTP, data rekening bank konvensional, dan setujui atau tolak pendaftaran calon blogwalker.
+                Tinjau data pendaftar dan rekening bank konvensional, lalu setujui atau tolak pendaftaran calon blogwalker.
             </p>
         </div>
         <div class="flex items-center gap-2">
@@ -86,7 +84,7 @@
                     <tr>
                         <th class="px-6 py-3.5">Calon Blogwalker</th>
                         <th class="px-6 py-3.5">Rekening Bank Konvensional</th>
-                        <th class="px-6 py-3.5 text-center">Foto KTP</th>
+                        <th class="px-6 py-3.5 text-center">Foto KTP (Opsional)</th>
                         <th class="px-6 py-3.5 text-center">Foto Buku Rekening</th>
                         <th class="px-6 py-3.5">Waktu Pendaftaran</th>
                         <th class="px-6 py-3.5">Status</th>
@@ -200,9 +198,9 @@
                             @if($app->approval_status === 'pending')
                                 <div class="flex items-center justify-center gap-2">
                                     <button type="button" 
-                                        @click="openApproveModal('{{ route('admin.registrations.approve', $app) }}', '{{ $app->name }}', {{ $app->default_rate ?? 700 }})"
+                                        @click="openApproveModal('{{ route('admin.registrations.approve', $app) }}', '{{ $app->name }}')"
                                         class="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition shadow-xs flex items-center gap-1 cursor-pointer">
-                                        <span>✓ Approve & Plot</span>
+                                        <span>✓ Approve Akun</span>
                                     </button>
                                     <button type="button" 
                                         @click="openRejectModal('{{ route('admin.registrations.reject', $app) }}', '{{ $app->name }}')"
@@ -216,7 +214,7 @@
                                 </a>
                             @else
                                 <button type="button" 
-                                    @click="openApproveModal('{{ route('admin.registrations.approve', $app) }}', '{{ $app->name }}', {{ $app->default_rate ?? 700 }})"
+                                    @click="openApproveModal('{{ route('admin.registrations.approve', $app) }}', '{{ $app->name }}')"
                                     class="text-xs text-slate-500 font-semibold hover:text-emerald-600 underline cursor-pointer">
                                     Tinjau Ulang & Approve
                                 </button>
@@ -254,13 +252,6 @@
 
             <form :action="approveUrl" method="POST" class="space-y-4">
                 @csrf
-
-                <!-- Tarif Komentar -->
-                <div>
-                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Tarif Komentar Disetujui (Rp) *</label>
-                    <input type="number" name="default_rate" x-model="defaultRate" required min="0" step="50"
-                        class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                </div>
 
                 <!-- Plotting Ekstensi Domain (TLDs) -->
                 <div class="space-y-2">
@@ -333,7 +324,7 @@
                     <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Alasan Penolakan *</label>
                     <textarea name="rejection_reason" required rows="3"
                         class="w-full px-3 py-2 text-sm rounded-xl border border-slate-300 focus:ring-2 focus:ring-rose-500 focus:outline-none"
-                        placeholder="Contoh: Foto KTP buram dan nomor rekening tidak terbaca."></textarea>
+                        placeholder="Contoh: Foto buku rekening buram dan nomor rekening tidak terbaca."></textarea>
                 </div>
 
                 <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
